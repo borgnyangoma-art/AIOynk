@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO - All in One Creative Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-input:focus {
+             border-color: #40E0D0 !important;
+             box-shadow: none !important;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#40E0D0", /* Turquoise */
+              "secondary": "#0077B6", /* Ocean Blue */
+              "background-light": "#f6f8f8",
+              "background-dark": "#021B2B", /* Deep Navy */
+              "text-light": "#27272a",
+              "text-dark": "#FFFFFF", /* White */
+              "accent-dark": "#0e2a47" /* Darker accent for card */
+            },
+            fontFamily: {
+              "display": ["Inter"]
+            },
+            borderRadius: {
+                "DEFAULT": "1rem", /* 16px */
+                "lg": "1.25rem", /* 20px */
+                "xl": "3rem", 
+                "full": "9999px"
+            },
+            boxShadow: {
+              'soft': '0 10px 30px -15px rgba(0, 0, 0, 0.3)',
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-dark font-display text-text-dark antialiased">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-background-dark p-4 overflow-hidden">
+<!-- Background Gradients -->
+<div class="absolute top-[-20%] left-[-20%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] animate-pulse"></div>
+<div class="absolute bottom-[-20%] right-[-20%] w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
+<div class="relative z-10 flex w-full max-w-md flex-col items-center">
+<div class="mb-8 flex flex-col items-center">
+<div class="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
+<span class="text-background-dark font-bold text-3xl tracking-wider">AIO</span>
+</div>
+</div>
+<div class="w-full rounded-lg bg-accent-dark/40 backdrop-blur-sm p-8 shadow-soft border border-secondary/20">
+<!-- Tabs -->
+<div class="pb-3">
+<div class="flex border-b border-secondary/50">
+<a class="flex flex-1 flex-col items-center justify-center border-b-[3px] border-b-primary pb-[13px] pt-4" href="#">
+<p class="text-text-dark text-sm font-bold leading-normal tracking-[0.015em]">Sign In</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center border-b-[3px] border-b-transparent pb-[13px] pt-4 text-white/50" href="#">
+<p class="text-sm font-bold leading-normal tracking-[0.015em]">Sign Up</p>
+</a>
+</div>
+</div>
+<!-- Form Content -->
+<div class="mt-6 flex flex-col gap-6">
+<!-- Social Login Button -->
+<button class="flex h-12 w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-secondary px-5 text-base font-bold leading-normal tracking-[0.015em] text-text-dark transition-opacity hover:opacity-90">
+<img alt="Google logo" class="mr-3 h-5 w-5" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGQjH5clrYAgIDh7-3QVJn0cVPsWTerNSDs-Un4ESNJiRwTtYFsjBOmTYu-OTGKD9zSUWMLOerqASK9Q6SV1-PvVM0DlJOVqdjqmOQwuGv-ydcb9oHZ5MApRg3g_9xo9Uq4bBVKwOPqH7r1ijQIIUXFlkfA6UrjCS4Ttx6s-yRpDzdG1EHaQ-D47NXfQA8tqexG82ZpiS0WsppzoShRL59nFV8qiwE_63Ww2cA0PTHiAJLDOI8YImGeDYweUeVSbRdhJJ0CLFvMw"/>
+<span class="truncate">Continue with Google</span>
+</button>
+<div class="flex items-center gap-4">
+<hr class="flex-grow border-t border-secondary/50"/>
+<span class="text-white/50 text-xs">OR</span>
+<hr class="flex-grow border-t border-secondary/50"/>
+</div>
+<!-- Text Fields -->
+<div class="flex flex-col gap-4">
+<label class="flex flex-col min-w-40 flex-1">
+<p class="text-text-dark text-base font-medium leading-normal pb-2">Email address</p>
+<input class="form-input flex h-14 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md border-b-2 border-secondary/50 bg-transparent px-3 py-[15px] text-base font-normal leading-normal text-text-dark placeholder:text-white/40 focus:border-primary focus:outline-0 focus:ring-0" placeholder="Enter your email" type="email" value=""/>
+</label>
+<label class="flex flex-col min-w-40 flex-1">
+<p class="text-text-dark text-base font-medium leading-normal pb-2">Password</p>
+<input class="form-input flex h-14 w-full min-w-0 flex-1 resize-none overflow-hidden rounded-md border-b-2 border-secondary/50 bg-transparent px-3 py-[15px] text-base font-normal leading-normal text-text-dark placeholder:text-white/40 focus:border-primary focus:outline-0 focus:ring-0" placeholder="Enter your password" type="password" value=""/>
+</label>
+</div>
+<!-- Sign In Button -->
+<div class="flex pt-4">
+<button class="flex h-12 w-full min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-full bg-primary px-5 text-base font-bold leading-normal tracking-[0.015em] text-background-dark transition-opacity hover:opacity-90">
+<span class="truncate">Sign In</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Text -->
+<div class="mt-8 text-center">
+<p class="text-xs text-white/50">By continuing, you agree to AIO’s <a class="underline hover:text-primary" href="#">Terms of Use</a>.</p>
+</div>
+</div>
+</div>
+</body></html>

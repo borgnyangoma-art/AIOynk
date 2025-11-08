@@ -1,0 +1,22 @@
+sequenceDiagram
+    participant User
+    participant AIO
+    participant OAuth
+    participant GDrive
+    participant Storage
+    
+    User->>AIO: Login with Google
+    AIO->>OAuth: Request Authorization
+    OAuth->>User: Consent Screen
+    User->>OAuth: Grant Permission
+    OAuth->>AIO: Access Token
+    AIO->>GDrive: Verify Token
+    GDrive->>AIO: User Info + Permissions
+    
+    User->>AIO: Create Artifact
+    AIO->>Storage: Save Locally
+    Storage->>AIO: Local Path
+    AIO->>GDrive: Upload File
+    GDrive->>AIO: File ID
+    AIO->>Storage: Update Metadata
+    AIO->>User: Success Notification

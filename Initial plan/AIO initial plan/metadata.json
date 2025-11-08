@@ -1,0 +1,17 @@
+{
+  "feature_name": "AIO is a chat-powered creative hub that lets users design, code, model, and edit video — all from",
+  "generated_at": "2025-11-05T15:48:29.619Z",
+  "model_used": "Anthropic: Claude Opus 4.1",
+  "generation_time": {
+    "requirements_seconds": 73,
+    "design_seconds": 143,
+    "tasks_seconds": 103,
+    "total_seconds": 319.19
+  },
+  "token_usage": {
+    "requirements_tokens": 2918,
+    "design_tokens": 10677,
+    "tasks_tokens": 14855,
+    "total_tokens": 28450
+  }
+}

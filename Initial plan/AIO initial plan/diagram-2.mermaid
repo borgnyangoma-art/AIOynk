@@ -1,0 +1,24 @@
+graph LR
+    subgraph "Frontend Components"
+        REACT[React App]
+        REDUX[Redux Store]
+        SOCK[Socket.io Client]
+        CANVAS[Canvas Renderer]
+        PREVIEW[Preview Engine]
+    end
+    
+    subgraph "Backend Microservices"
+        API[API Server]
+        WORKER[Worker Pool]
+        QUEUE[Job Queue]
+        STREAM[Media Streamer]
+    end
+    
+    REACT --> REDUX
+    REDUX --> SOCK
+    REACT --> CANVAS
+    REACT --> PREVIEW
+    SOCK <--> API
+    API --> QUEUE
+    QUEUE --> WORKER
+    WORKER --> STREAM

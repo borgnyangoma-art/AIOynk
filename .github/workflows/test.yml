@@ -1,0 +1,379 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: aio_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup test environment
+      run: |
+        cp .env.example .env
+        echo "DATABASE_URL=postgresql://test:test@localhost:5432/aio_test" >> .env
+        echo "REDIS_URL=redis://localhost:6379/1" >> .env
+
+    - name: Run backend unit tests
+      run: npm run test:backend
+      env:
+        NODE_ENV: test
+
+    - name: Run frontend unit tests
+      run: npm run test:frontend --workspace=apps/frontend
+
+    - name: Generate coverage reports
+      run: |
+        npm run test:backend -- --coverage
+        npm run test:frontend -- --coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: backend
+
+    - name: Upload coverage to Codecov (Frontend)
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./apps/frontend/coverage/lcov.info
+        flags: frontend
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start services
+      run: |
+        npm run dev:backend &
+        npm run dev:frontend &
+        sleep 30
+
+    - name: Run Playwright tests
+      run: npm run test:e2e
+      env:
+        CI: true
+
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
+
+  performance-tests:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build application
+      run: npm run build
+
+    - name: Start services
+      run: |
+        npm run dev:backend &
+        sleep 30
+
+    - name: Run K6 load tests
+      run: npm run test:performance
+      env:
+        BASE_URL: http://localhost:3000
+
+    - name: Run K6 stress tests
+      run: npm run test:stress
+      env:
+        BASE_URL: http://localhost:3000
+
+  security-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security tests
+      run: npm run test:backend -- --testPathPattern=security
+      env:
+        NODE_ENV: test
+
+    - name: Run OWASP ZAP Baseline Scan
+      uses: zaproxy/action-baseline@v0.12.0
+      with:
+        target: 'http://localhost:3000'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Check formatting with Prettier
+      run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,css,md}"
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests, lint-and-format]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.REGISTRY_URL }}
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ secrets.REGISTRY_URL }}/aio-creative-hub/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./${{ matrix.service }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+      env:
+        DOCKER_BUILDKIT: 1
+      with:
+        matrices: |
+          service:
+            - apps/frontend
+            - apps/backend
+            - services/graphics-service
+            - services/web-designer-service
+            - services/ide-service
+            - services/cad-service
+            - services/video-service
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, security-tests]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup SSH Key
+      uses: shimataro/ssh-key-action@v10
+      with:
+        private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        public-key: ${{ secrets.SSH_PUBLIC_KEY }}
+        known-hosts: ${{ secrets.KNOWN_HOSTS }}
+
+    - name: Deploy to staging
+      run: |
+        ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
+          cd /opt/aio-creative-hub &&
+          git pull origin develop &&
+          cp .env.staging .env &&
+          docker-compose -f docker-compose.yml pull &&
+          docker-compose -f docker-compose.yml up -d --remove-orphans
+        "
+
+    - name: Wait for deployment
+      run: sleep 30
+
+    - name: Health check
+      run: |
+        curl -f ${{ secrets.STAGING_URL }}/health || exit 1
+
+    - name: Run smoke tests
+      run: |
+        npm run test:e2e -- --baseUrl=${{ secrets.STAGING_URL }}
+      env:
+        CI: true
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, performance-tests]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup SSH Key
+      uses: shimataro/ssh-key-action@v10
+      with:
+        private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        public-key: ${{ secrets.SSH_PUBLIC_KEY }}
+        known-hosts: ${{ secrets.KNOWN_HOSTS }}
+
+    - name: Deploy to production
+      run: |
+        ssh ${{ secrets.PRODUCTION_USER }}@${{ secrets.PRODUCTION_HOST }} "
+          cd /opt/aio-creative-hub &&
+          git pull origin main &&
+          cp .env.production .env &&
+          docker-compose -f docker-compose.yml pull &&
+          docker-compose -f docker-compose.yml up -d --remove-orphans
+        "
+
+    - name: Wait for deployment
+      run: sleep 60
+
+    - name: Health check
+      run: |
+        curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
+
+    - name: Run production smoke tests
+      run: |
+        npm run test:e2e -- --baseUrl=${{ secrets.PRODUCTION_URL }}
+      env:
+        CI: true
+
+    - name: Notify deployment
+      if: success()
+      run: |
+        echo "✅ Production deployment successful!" | \
+        mail -s "AIO Creative Hub - Production Deployed" ${{ secrets.NOTIFICATION_EMAIL }}
+
+    - name: Notify failure
+      if: failure()
+      run: |
+        echo "❌ Production deployment failed!" | \
+        mail -s "AIO Creative Hub - Deployment FAILED" ${{ secrets.NOTIFICATION_EMAIL }}
+
+  docker-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      run: |
+        docker build -t aio-creative-hub:scan ./apps/backend
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'aio-creative-hub:scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate

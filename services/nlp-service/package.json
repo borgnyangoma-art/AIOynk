@@ -1,0 +1,11 @@
+{
+  "name": "@aio/nlp-service",
+  "version": "1.0.0",
+  "description": "AIO NLP Processing Service",
+  "scripts": {
+    "dev": "python3 src/main.py",
+    "build": "echo \"Python service - no build step\"",
+    "start": "python3 src/main.py",
+    "test": "pytest"
+  }
+}

@@ -1,0 +1,1717 @@
+openapi: 3.0.3
+info:
+  title: AIO Creative Hub API
+  description: |
+    API for the AIO Creative Hub - a chat-powered creative platform for design, coding, 3D modeling, and video editing.
+
+    ## Features
+    - Natural language processing for creative tool routing
+    - Real-time collaboration via WebSocket
+    - Multi-tool creative workflow support
+    - Google Drive integration
+    - Secure authentication with OAuth 2.0
+
+    ## Authentication
+    This API uses JWT Bearer token authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+    ## Rate Limiting
+    - Standard endpoints: 100 requests per minute
+    - Tool operations: 60 requests per minute
+    - File uploads: 20 requests per minute
+
+    ## WebSocket
+    The API supports real-time communication via WebSocket. Connect to:
+    ```
+    ws://localhost:3000/ws
+    ```
+
+    ## Error Codes
+    - 400: Bad Request - Invalid input
+    - 401: Unauthorized - Authentication required
+    - 403: Forbidden - Insufficient permissions
+    - 404: Not Found - Resource not found
+    - 429: Too Many Requests - Rate limit exceeded
+    - 500: Internal Server Error
+
+  version: 1.0.0
+  contact:
+    name: AIO Creative Hub API Support
+    email: support@aio-creative-hub.com
+    url: https://aio-creative-hub.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.staging.aio-creative-hub.com
+    description: Staging environment
+  - url: https://api.aio-creative-hub.com
+    description: Production environment
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Health Check
+  /health:
+    get:
+      tags:
+        - System
+      summary: Health check endpoint
+      description: Returns the health status of the API and its dependencies
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                      redis:
+                        type: string
+                      nlp_service:
+                        type: string
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: unhealthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  issues:
+                    type: array
+                    items:
+                      type: string
+
+  # Authentication
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with email and password
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "securePassword123"
+                firstName:
+                  type: string
+                  example: John
+                lastName:
+                  type: string
+                  example: Doe
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        '400':
+          description: Invalid input or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user and receive JWT token
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/google:
+    get:
+      tags:
+        - Authentication
+      summary: Google OAuth login
+      description: Initiate Google OAuth 2.0 authentication flow
+      operationId: googleAuth
+      responses:
+        '302':
+          description: Redirect to Google OAuth
+        '400':
+          description: Invalid request
+
+  /api/auth/google/callback:
+    get:
+      tags:
+        - Authentication
+      summary: Google OAuth callback
+      description: Handle Google OAuth callback
+      operationId: googleCallback
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+        '400':
+          description: Authentication failed
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh JWT token
+      description: Get a new JWT token using refresh token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid refresh token
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate current session
+      operationId: logoutUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  # User Management
+  /api/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      description: Get the current user's profile information
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Update the current user's profile information
+      operationId: updateUserProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                bio:
+                  type: string
+                avatarUrl:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  user:
+                    $ref: '#/components/schemas/UserProfile'
+
+  /api/users/sessions:
+    get:
+      tags:
+        - Users
+      summary: Get user sessions
+      description: Get all active sessions for the current user
+      operationId: getUserSessions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Sessions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+
+  /api/users/sessions/{sessionId}:
+    delete:
+      tags:
+        - Users
+      summary: Terminate session
+      description: Terminate a specific user session
+      operationId: terminateSession
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session terminated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  # Chat & Messages
+  /api/chat:
+    post:
+      tags:
+        - Chat
+      summary: Send chat message
+      description: Send a message to the AI chat system
+      operationId: sendMessage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  example: "Create a logo for my tech startup"
+                sessionId:
+                  type: string
+                  description: Optional session ID to continue conversation
+                context:
+                  type: object
+                  description: Optional additional context
+      responses:
+        '200':
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  response:
+                    type: string
+                    example: "I'll help you create a logo for your tech startup. What industry are you in?"
+                  sessionId:
+                    type: string
+                  toolUsed:
+                    type: string
+                    example: "nlp-service"
+                  confidence:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 1
+                    example: 0.95
+                  artifacts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Artifact'
+        '400':
+          description: Invalid message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/chat/history/{sessionId}:
+    get:
+      tags:
+        - Chat
+      summary: Get chat history
+      description: Get the message history for a specific chat session
+      operationId: getChatHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Chat history retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /api/chat/sessions:
+    get:
+      tags:
+        - Chat
+      summary: Get chat sessions
+      description: Get all chat sessions for the current user
+      operationId: getChatSessions
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Chat sessions retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatSession'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    delete:
+      tags:
+        - Chat
+      summary: Delete chat session
+      description: Delete a specific chat session
+      operationId: deleteChatSession
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+              properties:
+                sessionId:
+                  type: string
+      responses:
+        '200':
+          description: Chat session deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  # Creative Tools
+  /api/tools:
+    get:
+      tags:
+        - Tools
+      summary: Get available tools
+      description: Get list of all available creative tools
+      operationId: getTools
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Tools retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Tool'
+
+  # Graphics Tool
+  /api/tools/graphics/canvas:
+    post:
+      tags:
+        - Graphics Tool
+      summary: Create canvas
+      description: Create a new graphics canvas
+      operationId: createCanvas
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - width
+                - height
+              properties:
+                width:
+                  type: integer
+                  example: 1920
+                height:
+                  type: integer
+                  example: 1080
+                backgroundColor:
+                  type: string
+                  example: "#ffffff"
+      responses:
+        '201':
+          description: Canvas created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  canvasId:
+                    type: string
+                  canvas:
+                    $ref: '#/components/schemas/Canvas'
+
+  /api/tools/graphics/canvas/{canvasId}:
+    get:
+      tags:
+        - Graphics Tool
+      summary: Get canvas
+      description: Get canvas data by ID
+      operationId: getCanvas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: canvasId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canvas retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canvas:
+                    $ref: '#/components/schemas/Canvas'
+
+    put:
+      tags:
+        - Graphics Tool
+      summary: Update canvas
+      description: Update canvas properties
+      operationId: updateCanvas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: canvasId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                objects:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CanvasObject'
+                layers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Layer'
+      responses:
+        '200':
+          description: Canvas updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+    delete:
+      tags:
+        - Graphics Tool
+      summary: Delete canvas
+      description: Delete a canvas
+      operationId: deleteCanvas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: canvasId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canvas deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  /api/tools/graphics/canvas/{canvasId}/export:
+    post:
+      tags:
+        - Graphics Tool
+      summary: Export canvas
+      description: Export canvas to various formats
+      operationId: exportCanvas
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: canvasId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - format
+              properties:
+                format:
+                  type: string
+                  enum: [png, jpg, svg, webp]
+                  example: png
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 90
+      responses:
+        '200':
+          description: Canvas exported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  downloadUrl:
+                    type: string
+                    format: uri
+
+  # Web Designer Tool
+  /api/tools/web-designer/generate:
+    post:
+      tags:
+        - Web Designer Tool
+      summary: Generate web code
+      description: Generate HTML/CSS/JS code from natural language description
+      operationId: generateWebCode
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                description:
+                  type: string
+                  example: "Create a modern landing page for a coffee shop"
+                framework:
+                  type: string
+                  enum: [react, vue, vanilla]
+                  default: vanilla
+                responsive:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Code generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  code:
+                    type: object
+                    properties:
+                      html:
+                        type: string
+                      css:
+                        type: string
+                      js:
+                        type: string
+                  previewUrl:
+                    type: string
+                    format: uri
+
+  /api/tools/web-designer/validate:
+    post:
+      tags:
+        - Web Designer Tool
+      summary: Validate code
+      description: Validate HTML/CSS code for errors and accessibility
+      operationId: validateCode
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                html:
+                  type: string
+                css:
+                  type: string
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        message:
+                          type: string
+                        line:
+                          type: integer
+                  warnings:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                        message:
+                          type: string
+                        line:
+                          type: integer
+                  accessibility:
+                    type: object
+                    properties:
+                      score:
+                        type: number
+                        format: float
+                        minimum: 0
+                        maximum: 100
+                      issues:
+                        type: array
+                        items:
+                          type: object
+
+  # IDE Tool
+  /api/tools/ide/execute:
+    post:
+      tags:
+        - IDE Tool
+      summary: Execute code
+      description: Execute code in a sandboxed environment
+      operationId: executeCode
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - language
+                - code
+              properties:
+                language:
+                  type: string
+                  enum: [python, javascript, java, cpp]
+                  example: python
+                code:
+                  type: string
+                  example: "print('Hello, World!')"
+                input:
+                  type: string
+                  description: Optional input to the program
+      responses:
+        '200':
+          description: Code executed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  output:
+                    type: string
+                  error:
+                    type: string
+                  executionTime:
+                    type: number
+                    format: float
+                  memoryUsed:
+                    type: number
+                    format: float
+
+  /api/tools/ide/validate:
+    post:
+      tags:
+        - IDE Tool
+      summary: Validate syntax
+      description: Check code for syntax errors
+      operationId: validateSyntax
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - language
+                - code
+              properties:
+                language:
+                  type: string
+                  enum: [python, javascript, java, cpp]
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Validation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  valid:
+                    type: boolean
+                    example: true
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        line:
+                          type: integer
+                        column:
+                          type: integer
+                        message:
+                          type: string
+
+  # CAD Tool
+  /api/tools/cad/generate:
+    post:
+      tags:
+        - CAD Tool
+      summary: Generate 3D model
+      description: Generate 3D model from description
+      operationId: generate3DModel
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+              properties:
+                description:
+                  type: string
+                  example: "Create a simple chair with four legs"
+                primitive:
+                  type: string
+                  enum: [box, sphere, cylinder, cone, torus]
+                  example: box
+      responses:
+        '200':
+          description: Model generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  modelId:
+                    type: string
+                  vertices:
+                    type: integer
+                  faces:
+                    type: integer
+                  downloadUrl:
+                    type: string
+                    format: uri
+
+  /api/tools/cad/model/{modelId}:
+    get:
+      tags:
+        - CAD Tool
+      summary: Get 3D model
+      description: Get 3D model data
+      operationId: get3DModel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  model:
+                    $ref: '#/components/schemas/Model3D'
+
+  /api/tools/cad/model/{modelId}/export:
+    post:
+      tags:
+        - CAD Tool
+      summary: Export 3D model
+      description: Export 3D model to various formats
+      operationId: export3DModel
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: modelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - format
+              properties:
+                format:
+                  type: string
+                  enum: [stl, obj, gltf, ply]
+                  example: stl
+      responses:
+        '200':
+          description: Model exported
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  downloadUrl:
+                    type: string
+                    format: uri
+
+  # Video Tool
+  /api/tools/video/process:
+    post:
+      tags:
+        - Video Tool
+      summary: Process video
+      description: Process video with effects and filters
+      operationId: processVideo
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - videoUrl
+                - operations
+              properties:
+                videoUrl:
+                  type: string
+                  format: uri
+                  example: "https://example.com/video.mp4"
+                operations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [trim, resize, filter, effect]
+                      params:
+                        type: object
+      responses:
+        '200':
+          description: Video processing started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                    example: processing
+
+  /api/tools/video/job/{jobId}:
+    get:
+      tags:
+        - Video Tool
+      summary: Get processing job status
+      description: Get the status of a video processing job
+      operationId: getProcessingJob
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, processing, completed, failed]
+                  progress:
+                    type: number
+                    format: float
+                    minimum: 0
+                    maximum: 100
+                  resultUrl:
+                    type: string
+                    format: uri
+                  error:
+                    type: string
+
+  # Artifacts
+  /api/artifacts:
+    get:
+      tags:
+        - Artifacts
+      summary: Get user artifacts
+      description: Get all artifacts created by the current user
+      operationId: getArtifacts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tool
+          in: query
+          schema:
+            type: string
+            enum: [graphics, web-designer, ide, cad, video]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Artifacts retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifacts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Artifact'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /api/artifacts/{artifactId}:
+    get:
+      tags:
+        - Artifacts
+      summary: Get artifact
+      description: Get a specific artifact by ID
+      operationId: getArtifact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Artifact retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  artifact:
+                    $ref: '#/components/schemas/Artifact'
+
+    delete:
+      tags:
+        - Artifacts
+      summary: Delete artifact
+      description: Delete an artifact
+      operationId: deleteArtifact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Artifact deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  /api/artifacts/{artifactId}/download:
+    get:
+      tags:
+        - Artifacts
+      summary: Download artifact
+      description: Download an artifact file
+      operationId: downloadArtifact
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Artifact downloaded
+          content:
+            application/octet-stream
+        '404':
+          description: Artifact not found
+
+  # Google Drive Integration
+  /api/google-drive/save:
+    post:
+      tags:
+        - Google Drive
+      summary: Save to Google Drive
+      description: Save an artifact to Google Drive
+      operationId: saveToDrive
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - artifactId
+                - folderName
+              properties:
+                artifactId:
+                  type: string
+                folderName:
+                  type: string
+                  example: "AIO Creative Hub"
+      responses:
+        '200':
+          description: Saved to Google Drive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  fileId:
+                    type: string
+                  fileUrl:
+                    type: string
+                    format: uri
+
+  /api/google-drive/files:
+    get:
+      tags:
+        - Google Drive
+      summary: List Google Drive files
+      description: List files in the AIO Creative Hub folder
+      operationId: listDriveFiles
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Files retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  files:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        mimeType:
+                          type: string
+                        size:
+                          type: string
+                        modifiedTime:
+                          type: string
+                          format: date-time
+
+  # WebSocket
+  /ws:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket connection
+      description: Establish a WebSocket connection for real-time communication
+      operationId: websocketConnection
+      security:
+        - BearerAuth: []
+      responses:
+        '101':
+          description: WebSocket upgrade successful
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLogin:
+          type: string
+          format: date-time
+
+    UserProfile:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            bio:
+              type: string
+            avatarUrl:
+              type: string
+              format: uri
+            preferences:
+              type: object
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastActivity:
+          type: string
+          format: date-time
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        userId:
+          type: string
+        content:
+          type: string
+        isFromUser:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastMessage:
+          type: string
+        messageCount:
+          type: integer
+
+    Tool:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+
+    Canvas:
+      type: object
+      properties:
+        id:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+        backgroundColor:
+          type: string
+        objects:
+          type: array
+          items:
+            $ref: '#/components/schemas/CanvasObject'
+        layers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Layer'
+
+    CanvasObject:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        left:
+          type: number
+        top:
+          type: number
+        width:
+          type: number
+        height:
+          type: number
+        angle:
+          type: number
+        fill:
+          type: string
+        stroke:
+          type: string
+
+    Layer:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        visible:
+          type: boolean
+        opacity:
+          type: number
+        blendMode:
+          type: string
+
+    Model3D:
+      type: object
+      properties:
+        id:
+          type: string
+        vertices:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+        faces:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+        materials:
+          type: array
+          items:
+            type: object
+
+    Artifact:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        tool:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        size:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        downloadUrl:
+          type: string
+          format: uri
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        hasMore:
+          type: boolean
+
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Users
+    description: User management and profile
+  - name: Chat
+    description: Chat and messaging
+  - name: Tools
+    description: Creative tools
+  - name: Graphics Tool
+    description: Graphics editing and design
+  - name: Web Designer Tool
+    description: Web design and code generation
+  - name: IDE Tool
+    description: Code execution and development
+  - name: CAD Tool
+    description: 3D modeling and design
+  - name: Video Tool
+    description: Video processing and editing
+  - name: Artifacts
+    description: File and artifact management
+  - name: Google Drive
+    description: Google Drive integration
+  - name: WebSocket
+    description: Real-time WebSocket communication

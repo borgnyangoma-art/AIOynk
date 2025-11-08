@@ -1,0 +1,21 @@
+graph TB
+    subgraph "Security Architecture"
+        CLIENT[Client]
+        WAF[Web Application Firewall]
+        LB[Load Balancer/SSL Termination]
+        AUTH[Authentication Service]
+        AUTHZ[Authorization Service]
+        API[API Gateway]
+        SERVICES[Microservices]
+        VAULT[Secrets Manager]
+        DB[(Encrypted Database)]
+    end
+    
+    CLIENT -->|HTTPS| WAF
+    WAF -->|Filter| LB
+    LB -->|TLS 1.3| AUTH
+    AUTH -->|JWT| AUTHZ
+    AUTHZ -->|Validate| API
+    API -->|Secure| SERVICES
+    SERVICES <-->|Fetch| VAULT
+    SERVICES <-->|Encrypted| DB

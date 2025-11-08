@@ -1,0 +1,22 @@
+graph TB
+    subgraph "Testing Pyramid"
+        E2E[E2E Tests - 10%]
+        INT[Integration Tests - 30%]
+        UNIT[Unit Tests - 60%]
+    end
+    
+    subgraph "Test Types"
+        FUNC[Functional Tests]
+        PERF[Performance Tests]
+        SEC[Security Tests]
+        LOAD[Load Tests]
+        A11Y[Accessibility Tests]
+    end
+    
+    UNIT --> FUNC
+    INT --> FUNC
+    E2E --> FUNC
+    E2E --> PERF
+    INT --> SEC
+    E2E --> LOAD
+    E2E --> A11Y

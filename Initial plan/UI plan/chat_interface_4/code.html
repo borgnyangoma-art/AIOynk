@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO Creative Hub - Video Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "deep-navy": "#021B2B",
+                        "ocean-blue": "#0077B6",
+                        "turquoise": "#40E0D0",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem","lg": "1rem",
+                        "xl": "1.5rem"
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 2px 8px 0 rgba(64, 224, 208, 0.1)',
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-deep-navy font-display text-white">
+<div class="flex h-screen w-full flex-col p-6">
+<header class="mb-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="AIO Creative Hub logo with an abstract wave pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCJwCWalfn3pUsI1rPlkWRwGhfkHrKKwXl1jecxVFg-45RGo3K9dV8dNbHlQcFsJgkxP7QwzTi-sx6wr4XjFPnfqqUZln9aKLeAXsNFbYTOn8ikKVCPHesVe60VtCq6f5X8eiAyX3M1NG3J7t5cPlA5DHsEkVW2zyyM-_qIqGJY8_BOmVec6jSFXY1lPtvA9_SqbZj3x2UD9f28Yi-PXkOPYHbyIgjnwqlveQkhMGO6s9p49RQYGsUz5cxyXuwnJkXvVe0XtDT4ZA");'></div>
+<h1 class="text-white text-lg font-medium leading-normal tracking-wide">Video Editor</h1>
+</div>
+<button class="flex h-10 cursor-pointer items-center justify-center gap-x-2 rounded-lg bg-turquoise px-5 text-sm font-medium text-deep-navy shadow-soft transition-all hover:bg-opacity-90">
+<span class="material-symbols-outlined text-[20px]">file_upload</span>
+                Export
+            </button>
+</header>
+<main class="flex flex-1 flex-col items-center justify-center gap-6 overflow-hidden">
+<div class="relative w-full max-w-4xl rounded-lg bg-black shadow-soft">
+<div class="aspect-video w-full rounded-lg bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBeXKrhKjQgpTdQsVs1OGbv4rlOtmHNlvPDx2n8CIFtmWFnsxAL5e_XA25aduTQjLwfeaMQeODkgLlHWKm_yPTf4UES2TKQAmR3yuPdIFKXjNChmympIpyaUzh1ojIUVzBZcJKuYo5bhbzVrNOT5rYYVsThtajMbevbtwuXv3peX72MH-6wKOuhxsBC51Xm66m_2GUjFO709LSEjeDno1Zwmz6hPh5TXRX55gyl9A2oe8AvygQQGHbC6x9GUQlclUkw_kUa_ct0ew');"></div>
+<div class="absolute inset-x-4 bottom-4 flex items-center justify-between rounded-lg bg-ocean-blue/80 p-3 backdrop-blur-sm">
+<div class="flex items-center gap-3">
+<button class="text-white transition-colors hover:text-turquoise">
+<span class="material-symbols-outlined text-[28px]">fast_rewind</span>
+</button>
+<button class="flex size-10 items-center justify-center rounded-full bg-turquoise text-deep-navy shadow-soft transition-transform hover:scale-110">
+<span class="material-symbols-outlined text-[28px]">play_arrow</span>
+</button>
+<button class="text-white transition-colors hover:text-turquoise">
+<span class="material-symbols-outlined text-[28px]">fast_forward</span>
+</button>
+</div>
+<div class="text-sm font-medium">00:15 / 01:30</div>
+<div class="flex items-center gap-3">
+<button class="text-white transition-colors hover:text-turquoise">
+<span class="material-symbols-outlined text-[24px]">volume_up</span>
+</button>
+<button class="text-white transition-colors hover:text-turquoise">
+<span class="material-symbols-outlined text-[24px]">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex w-full max-w-6xl flex-col gap-4 rounded-lg bg-[#0077b6]/20 p-4 shadow-soft">
+<div class="flex items-center gap-4">
+<button class="flex h-10 cursor-pointer items-center justify-center gap-x-2 rounded-lg border border-ocean-blue bg-ocean-blue/20 px-4 text-sm font-medium text-turquoise transition-colors hover:bg-ocean-blue/40">
+<span class="material-symbols-outlined text-[20px]">content_cut</span>
+                        Cut
+                    </button>
+<button class="flex h-10 cursor-pointer items-center justify-center gap-x-2 rounded-lg border border-ocean-blue bg-ocean-blue/20 px-4 text-sm font-medium text-turquoise transition-colors hover:bg-ocean-blue/40">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+                        Add Media
+                    </button>
+<button class="flex h-10 cursor-pointer items-center justify-center gap-x-2 rounded-lg border border-ocean-blue bg-ocean-blue/20 px-4 text-sm font-medium text-turquoise transition-colors hover:bg-ocean-blue/40">
+<span class="material-symbols-outlined text-[20px]">text_fields</span>
+                        Add Text
+                    </button>
+</div>
+<div class="relative flex h-20 w-full items-center overflow-hidden rounded-lg bg-deep-navy/50 no-scrollbar">
+<div class="absolute left-0 top-0 z-10 h-full w-1/4 bg-turquoise/80"></div>
+<div class="absolute left-1/4 top-0 z-20 h-full w-0.5 -translate-x-1/2 bg-white">
+<div class="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-white"></div>
+<div class="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-white"></div>
+</div>
+<div class="absolute left-3/4 top-1/2 z-20 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50"></div>
+<div class="absolute left-1/2 top-1/2 z-20 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50"></div>
+<div class="flex h-full w-[200%] items-center">
+<svg class="h-full w-full" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 35 L20 45 L40 30 L60 50 L80 25 L100 40 L120 32 L140 48 L160 28 L180 42 L200 35 L220 45 L240 30 L260 50 L280 25 L300 40 L320 32 L340 48 L360 28 L380 42 L400 35 L420 45 L440 30 L460 50 L480 25 L500 40 L520 32 L540 48 L560 28 L580 42 L600 35 L620 45 L640 30 L660 50 L680 25 L700 40 L720 32 L740 48 L760 28 L780 42 L800 35 L820 45 L840 30 L860 50 L880 25 L900 40 L920 32 L940 48 L960 28 L980 42 L1000 35" stroke="#40E0D0" stroke-opacity="0.5" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="M0 45 L20 35 L40 50 L60 30 L80 55 L100 40 L120 48 L140 32 L160 52 L180 38 L200 45 L220 35 L240 50 L260 30 L280 55 L300 40 L320 48 L340 32 L360 52 L380 38 L400 45 L420 35 L440 50 L460 30 L480 55 L500 40 L520 48 L540 32 L560 52 L580 38 L600 45 L620 35 L640 50 L660 30 L680 55 L700 40 L720 48 L740 32 L760 52 L780 38 L800 45 L820 35 L840 50 L860 30 L880 55 L900 40 L920 48 L940 32 L960 52 L980 38 L1000 45" stroke="#40E0D0" stroke-opacity="0.5" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+</svg>
+</div>
+</div>
+</div>
+</main>
+</div>
+<div class="fixed inset-0 flex items-center justify-center bg-deep-navy/50 backdrop-blur-sm">
+<div class="w-full max-w-md rounded-lg bg-white p-6 text-deep-navy shadow-soft">
+<h2 class="mb-4 text-center text-xl font-medium tracking-wide text-turquoise">Export Video</h2>
+<div class="space-y-4">
+<div>
+<label class="mb-1 block text-sm font-medium text-ocean-blue" for="filename">Filename</label>
+<input class="w-full rounded-lg border-ocean-blue/30 text-deep-navy focus:border-ocean-blue focus:ring-ocean-blue" id="filename" type="text" value="AIO_Project_01.webm"/>
+</div>
+<div>
+<label class="mb-1 block text-sm font-medium text-ocean-blue" for="format">Format</label>
+<select class="w-full rounded-lg border-ocean-blue/30 text-deep-navy focus:border-ocean-blue focus:ring-ocean-blue" id="format">
+<option>WebM (.webm)</option>
+<option>MP4 (.mp4)</option>
+<option>GIF (.gif)</option>
+</select>
+</div>
+<div>
+<label class="mb-1 block text-sm font-medium text-ocean-blue" for="resolution">Resolution</label>
+<select class="w-full rounded-lg border-ocean-blue/30 text-deep-navy focus:border-ocean-blue focus:ring-ocean-blue" id="resolution">
+<option>1080p (Full HD)</option>
+<option>720p (HD)</option>
+<option>480p (SD)</option>
+</select>
+</div>
+</div>
+<div class="mt-6 flex justify-end gap-3">
+<button class="h-10 rounded-lg border border-ocean-blue px-4 text-sm font-medium text-ocean-blue transition-colors hover:bg-ocean-blue/10">Cancel</button>
+<button class="h-10 rounded-lg bg-ocean-blue px-5 text-sm font-medium text-white shadow-soft transition-colors hover:bg-ocean-blue/90">Export WebM</button>
+</div>
+</div>
+</div>
+
+</body></html>

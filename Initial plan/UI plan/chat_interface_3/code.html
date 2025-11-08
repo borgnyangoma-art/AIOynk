@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO Creative Hub - 3D Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Poppins:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+      .grid-background {
+        background-color: #021B2B;
+        background-image:
+          linear-gradient(rgba(64, 224, 208, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(64, 224, 208, 0.05) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+        background-position: center center;
+      }
+    </style>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "deep-navy": "#021B2B",
+              "ocean-blue": "#0077B6",
+              "turquoise": "#40E0D0",
+              "white": "#FFFFFF"
+            },
+            fontFamily: {
+              "display": ["Inter", "Poppins", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "1rem",},
+            boxShadow: {
+                'soft': '0 8px 32px rgba(0, 0, 0, 0.25)',
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-deep-navy font-display text-white">
+<div class="grid-background relative flex h-screen w-full overflow-hidden">
+<main class="flex-1">
+<header class="absolute left-0 top-0 z-20 flex w-full items-center justify-between p-6">
+<div class="flex items-center gap-3">
+<div class="aspect-square size-10 rounded-full bg-cover bg-center bg-no-repeat" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCJwCWalfn3pUsI1rPlkWRwGhfkHrKKwXl1jecxVFg-45RGo3K9dV8dNbHlQcFsJgkxP7QwzTi-sx6wr4XjFPnfqqUZln9aKLeAXsNFbYTOn8ikKVCPHesVe60VtCq6f5X8eiAyX3M1NG3J7t5cPlA5DHsEkVW2zyyM-_qIqGJY8_BOmVec6jSFXY1lPtvA9_SqbZj3x2UD9f28Yi-PXkOPYHbyIgjnwqlveQkhMGO6s9p49RQYGsUz5cxyXuwnJkXvVe0XtDT4ZA");'></div>
+<h1 class="font-medium tracking-wide text-white">Untitled Project.aio</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="rounded bg-turquoise px-5 py-2 text-sm font-medium text-deep-navy shadow-md transition-all hover:bg-opacity-90">Share</button>
+<button class="rounded border border-ocean-blue bg-ocean-blue/20 px-5 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-ocean-blue/40">Export</button>
+</div>
+</header>
+<aside class="absolute left-6 top-1/2 z-20 -translate-y-1/2">
+<div class="flex flex-col gap-2 rounded-lg bg-deep-navy/50 p-2 shadow-soft backdrop-blur-md">
+<button class="flex size-12 items-center justify-center rounded-lg text-turquoise transition-colors hover:bg-turquoise/20">
+<span class="material-symbols-outlined">3d_rotation</span>
+</button>
+<button class="flex size-12 items-center justify-center rounded-lg text-turquoise transition-colors hover:bg-turquoise/20">
+<span class="material-symbols-outlined">zoom_in</span>
+</button>
+<button class="flex size-12 items-center justify-center rounded-lg text-turquoise transition-colors hover:bg-turquoise/20">
+<span class="material-symbols-outlined">open_with</span>
+</button>
+<button class="flex size-12 items-center justify-center rounded-lg text-turquoise transition-colors hover:bg-turquoise/20">
+<span class="material-symbols-outlined">settings_overscan</span>
+</button>
+</div>
+</aside>
+<div class="flex h-full w-full items-center justify-center">
+<div class="relative h-[400px] w-[400px]">
+<div class="absolute -inset-16 bg-turquoise/20 blur-[100px]"></div>
+<img alt="Rendered 3D model of a futuristic helmet" class="relative z-10 h-full w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNmK2GuCrYYgq83j6cd4clR6ljOWRZDyEFmAf6f7PyE3oKUx0wJxUGUKiGTUsaIRQI6SMYG94xrdokJI1SUzvDtPE3XvphNdjwF86ecC2Zd5EJwtiBmiYE23fpTGTvX2N221zZz2JMRcsYgnaSJ8etmo4rOBvWzMMNXH3WZjGx55tJzL_QCilx0QpyK8nTBGxmzlpJorOOGGJxeMHxbQy0F2wn8SY3G0vS5B1k0rsL34k1zMp7UeZsF8dLkAb0thbVd0OyAP8yMg"/>
+</div>
+</div>
+</main>
+<aside class="z-10 flex w-80 flex-col border-l border-white/10 bg-ocean-blue/30 p-4 shadow-soft backdrop-blur-lg">
+<div class="mb-4">
+<h2 class="text-xl font-medium tracking-wide text-white">Parameters</h2>
+</div>
+<div class="flex flex-col gap-6">
+<div>
+<h3 class="mb-3 text-sm font-medium text-turquoise">Transform</h3>
+<div class="grid grid-cols-3 gap-2">
+<div class="flex flex-col gap-1">
+<label class="text-xs text-white/70">X</label>
+<input class="w-full rounded border-none bg-deep-navy/50 p-2 text-center text-white placeholder-white/50 focus:ring-2 focus:ring-turquoise" type="text" value="0"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-xs text-white/70">Y</label>
+<input class="w-full rounded border-none bg-deep-navy/50 p-2 text-center text-white placeholder-white/50 focus:ring-2 focus:ring-turquoise" type="text" value="1.2"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-xs text-white/70">Z</label>
+<input class="w-full rounded border-none bg-deep-navy/50 p-2 text-center text-white placeholder-white/50 focus:ring-2 focus:ring-turquoise" type="text" value="0"/>
+</div>
+</div>
+</div>
+<div>
+<h3 class="mb-3 text-sm font-medium text-turquoise">Material</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-sm text-white">Color</label>
+<div class="flex items-center gap-2">
+<span class="text-sm text-white/70">#40E0D0</span>
+<div class="size-6 cursor-pointer rounded border-2 border-white/20" style="background-color: #40E0D0"></div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm text-white">Metallic</label>
+<input class="h-1.5 w-32 cursor-pointer appearance-none rounded-full bg-deep-navy/50 accent-turquoise" max="1" min="0" step="0.1" type="range" value="0.8"/>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm text-white">Roughness</label>
+<input class="h-1.5 w-32 cursor-pointer appearance-none rounded-full bg-deep-navy/50 accent-turquoise" max="1" min="0" step="0.1" type="range" value="0.2"/>
+</div>
+</div>
+</div>
+<div>
+<h3 class="mb-3 text-sm font-medium text-turquoise">Environment</h3>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-sm text-white">Intensity</label>
+<input class="h-1.5 w-32 cursor-pointer appearance-none rounded-full bg-deep-navy/50 accent-turquoise" max="1" min="0" step="0.1" type="range" value="0.9"/>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-sm text-white">Shadows</label>
+<div class="relative inline-block w-10 select-none align-middle">
+<input checked="" class="peer absolute block size-6 cursor-pointer rounded-full border-4 border-deep-navy bg-white opacity-0" id="toggle" type="checkbox"/>
+<label class="block h-6 cursor-pointer overflow-hidden rounded-full bg-deep-navy/50 peer-checked:bg-turquoise" for="toggle"></label>
+</div>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+
+</body></html>

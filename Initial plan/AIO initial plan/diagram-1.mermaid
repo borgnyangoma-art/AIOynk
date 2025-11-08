@@ -1,0 +1,58 @@
+graph TB
+    subgraph "Client Layer"
+        UI[Web UI]
+        WS[WebSocket Client]
+    end
+    
+    subgraph "API Gateway"
+        GW[API Gateway/Load Balancer]
+        AUTH[Auth Service]
+    end
+    
+    subgraph "Core Services"
+        CHAT[Chat Service]
+        NLP[NLP Engine]
+        ROUTER[Intent Router]
+        CTX[Context Manager]
+    end
+    
+    subgraph "Creative Tools"
+        GRAPHICS[Graphics Engine]
+        WEB[Web Designer]
+        IDE[Code Editor]
+        CAD[3D Modeler]
+        VIDEO[Video Editor]
+    end
+    
+    subgraph "Storage Layer"
+        CACHE[Redis Cache]
+        DB[(PostgreSQL)]
+        FS[File Storage]
+    end
+    
+    subgraph "External Services"
+        GDRIVE[Google Drive API]
+        CDN[CDN Service]
+    end
+    
+    UI <--> WS
+    WS <--> GW
+    GW <--> AUTH
+    GW <--> CHAT
+    CHAT <--> NLP
+    NLP <--> ROUTER
+    ROUTER <--> CTX
+    ROUTER <--> GRAPHICS
+    ROUTER <--> WEB
+    ROUTER <--> IDE
+    ROUTER <--> CAD
+    ROUTER <--> VIDEO
+    CTX <--> CACHE
+    CHAT <--> DB
+    GRAPHICS <--> FS
+    WEB <--> FS
+    IDE <--> FS
+    CAD <--> FS
+    VIDEO <--> FS
+    FS <--> GDRIVE
+    FS <--> CDN

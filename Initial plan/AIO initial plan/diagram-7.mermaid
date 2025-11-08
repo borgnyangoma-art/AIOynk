@@ -1,0 +1,20 @@
+stateDiagram-v2
+    [*] --> Operation
+    Operation --> Success: No Error
+    Operation --> Error: Exception
+    
+    Error --> Categorize
+    Categorize --> Retryable: Transient Error
+    Categorize --> NonRetryable: Permanent Error
+    
+    Retryable --> Retry: Attempts < Max
+    Retryable --> Fallback: Attempts >= Max
+    Retry --> Operation
+    
+    NonRetryable --> Log
+    Fallback --> Log
+    Log --> Notify
+    Notify --> Recovery
+    
+    Recovery --> [*]
+    Success --> [*]

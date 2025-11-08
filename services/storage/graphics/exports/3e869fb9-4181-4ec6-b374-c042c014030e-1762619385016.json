@@ -1,0 +1,41 @@
+{
+  "id": "3e869fb9-4181-4ec6-b374-c042c014030e",
+  "width": 400,
+  "height": 300,
+  "background": "#fff7ed",
+  "elements": [
+    {
+      "id": "c56b46f6-5157-47d9-9236-43b2154c1221",
+      "type": "rectangle",
+      "properties": {
+        "x": 10,
+        "y": 10,
+        "width": 120,
+        "height": 80,
+        "fill": "#f97316"
+      },
+      "createdAt": "2025-11-08T16:29:44.991Z"
+    }
+  ],
+  "history": [
+    [],
+    [
+      {
+        "id": "c56b46f6-5157-47d9-9236-43b2154c1221",
+        "type": "rectangle",
+        "properties": {
+          "x": 10,
+          "y": 10,
+          "width": 120,
+          "height": 80
+        },
+        "createdAt": "2025-11-08T16:29:44.991Z"
+      }
+    ]
+  ],
+  "redoStack": [],
+  "createdAt": "2025-11-08T16:29:44.978Z",
+  "updatedAt": "2025-11-08T16:29:44.999Z",
+  "format": "json",
+  "exportedAt": "2025-11-08T16:29:45.016Z"
+}

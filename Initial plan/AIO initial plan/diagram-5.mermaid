@@ -1,0 +1,23 @@
+graph LR
+    subgraph "NLP Processing Pipeline"
+        INPUT[User Input]
+        TOKEN[Tokenization]
+        POS[POS Tagging]
+        NER[Entity Recognition]
+        INTENT[Intent Classification]
+        CONF[Confidence Scoring]
+        ROUTE[Tool Routing]
+    end
+    
+    INPUT --> TOKEN
+    TOKEN --> POS
+    POS --> NER
+    NER --> INTENT
+    INTENT --> CONF
+    CONF --> ROUTE
+    
+    ROUTE --> GRAPHICS{Graphics?}
+    ROUTE --> WEB{Web?}
+    ROUTE --> CODE{Code?}
+    ROUTE --> CAD{3D?}
+    ROUTE --> VIDEO{Video?}

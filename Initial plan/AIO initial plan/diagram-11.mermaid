@@ -1,0 +1,13 @@
+graph LR
+    subgraph "Backup Architecture"
+        PROD[Production Data]
+        SNAP[Snapshots]
+        BACKUP[Daily Backups]
+        ARCHIVE[Weekly Archives]
+        OFFSITE[Offsite Storage]
+    end
+    
+    PROD -->|Every 4h| SNAP
+    PROD -->|Daily| BACKUP
+    BACKUP -->|Weekly| ARCHIVE
+    ARCHIVE -->|Sync| OFFSITE

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO Creative Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#40E0D0",
+              "background-light": "#f6f8f8",
+              "background-dark": "#021B2B",
+              "secondary": "#0077B6",
+            },
+            fontFamily: {
+              "display": ["Poppins", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+            boxShadow: {
+              'glow-primary': '0 0 12px 2px rgba(64, 224, 208, 0.7)',
+            },
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display" style="--tw-text-opacity: 1; color: rgb(255 255 255 / var(--tw-text-opacity));">
+<div class="relative flex h-auto min-h-screen w-full flex-col group/design-root overflow-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/10 px-6 py-3">
+<div class="flex items-center gap-4 text-white">
+<span class="material-symbols-outlined text-primary text-2xl">
+                    widgets
+                </span>
+<h2 class="text-white text-lg font-bold leading-tight tracking-wider">AIO Creative Hub</h2>
+</div>
+<div class="flex flex-1 justify-end gap-8 items-center">
+<div class="hidden md:flex items-center gap-9">
+<a class="text-white text-sm font-medium leading-normal" href="#">Dashboard</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Projects</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Templates</a>
+<a class="text-white text-sm font-medium leading-normal" href="#">Help</a>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-primary text-background-dark text-sm font-bold leading-normal tracking-[0.015em]">
+<span class="truncate">Upgrade</span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="User profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuC4R0Bhw80WddWNggLPlEfp4IFUHKmiSOhpTODwvbxyWVpKOi8xjfffHLi35UC1CgzDFYn6JS7IV4yVmwSg944a1AIoEjvY1IIi71bIAylcy4fCO19XmpnK7Y0zdRm3HPwExc321TgLrRFW1OY2Kzd24F4XjgFNWll6O0AlnFdthRJKY_5TtS4_1B3chKm-oppQEJqFqI2QN1V1rgGlRvp73X9RBt2SCv3uQKbKpIBcrpRlyM2xPE2sT4Jf1ZTjAND-sdFGgFl9UA");'></div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex flex-1 flex-col md:flex-row h-[calc(100vh-65px)]">
+<!-- Left Pane: Canvas -->
+<div class="flex-1 p-8 bg-background-light dark:bg-white flex items-center justify-center">
+<div class="flex flex-col items-center gap-6 rounded-xl border-2 border-dashed border-secondary/50 px-6 py-14 shadow-glow-primary w-full max-w-2xl">
+<div class="flex max-w-[480px] flex-col items-center gap-2">
+<p class="text-zinc-900 text-lg font-bold leading-tight tracking-[-0.015em] text-center">Your Creative Canvas</p>
+<p class="text-zinc-600 text-sm font-normal leading-normal text-center">Drag elements here or use the 'Add Block' button to start creating.</p>
+</div>
+<button class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-10 px-4 bg-secondary text-white text-sm font-bold leading-normal tracking-[0.015em] gap-2">
+<span class="material-symbols-outlined text-xl">add_box</span>
+<span class="truncate">Add Block</span>
+</button>
+</div>
+</div>
+<!-- Right Pane: Control Panel -->
+<aside class="w-full md:w-80 bg-primary/20 backdrop-blur-lg flex flex-col p-4 border-l border-white/10">
+<div class="flex flex-col gap-6 h-full">
+<!-- Control Panel Header -->
+<div class="flex flex-col">
+<h1 class="text-white text-base font-medium leading-normal tracking-wider">Control Panel</h1>
+<p class="text-primary/70 text-sm font-normal leading-normal">Selected: Main Body</p>
+</div>
+<!-- Toolbar -->
+<div class="flex justify-around gap-2 p-2 rounded bg-background-dark/30">
+<button class="flex flex-col items-center p-2 text-white rounded w-full bg-secondary hover:bg-secondary/80 transition-colors">
+<span class="material-symbols-outlined">add_box</span>
+<span class="text-xs">Add Block</span>
+</button>
+<button class="flex flex-col items-center p-2 text-white rounded w-full bg-secondary hover:bg-secondary/80 transition-colors">
+<span class="material-symbols-outlined">css</span>
+<span class="text-xs">Edit CSS</span>
+</button>
+<button class="flex flex-col items-center p-2 text-white rounded w-full bg-secondary hover:bg-secondary/80 transition-colors">
+<span class="material-symbols-outlined">archive</span>
+<span class="text-xs">Export ZIP</span>
+</button>
+</div>
+<!-- Section Divider -->
+<div class="h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+<!-- Navigation Tabs -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-3 px-3 py-2 rounded-full bg-primary text-background-dark">
+<span class="material-symbols-outlined">tune</span>
+<p class="text-sm font-medium leading-normal">Properties</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-full hover:bg-white/10 cursor-pointer">
+<span class="material-symbols-outlined">layers</span>
+<p class="text-white text-sm font-medium leading-normal">Layers</p>
+</div>
+<div class="flex items-center gap-3 px-3 py-2 rounded-full hover:bg-white/10 cursor-pointer">
+<span class="material-symbols-outlined">folder_open</span>
+<p class="text-white text-sm font-medium leading-normal">Assets</p>
+</div>
+</div>
+<!-- Section Divider -->
+<div class="h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
+<!-- Accordions for Properties -->
+<div class="flex flex-col gap-3">
+<details class="flex flex-col rounded bg-background-dark/30 px-4 py-2 group" open="">
+<summary class="flex cursor-pointer items-center justify-between gap-6 py-2 list-none">
+<p class="text-white text-sm font-medium leading-normal">Typography</p>
+<span class="material-symbols-outlined text-white group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="text-primary/70 text-sm font-normal leading-normal pb-2">Font family, size, weight, and alignment controls will be displayed here.</p>
+</details>
+<details class="flex flex-col rounded bg-background-dark/30 px-4 py-2 group">
+<summary class="flex cursor-pointer items-center justify-between gap-6 py-2 list-none">
+<p class="text-white text-sm font-medium leading-normal">Sizing &amp; Spacing</p>
+<span class="material-symbols-outlined text-white group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="text-primary/70 text-sm font-normal leading-normal pb-2">Width, height, padding, and margin controls will be displayed here.</p>
+</details>
+<details class="flex flex-col rounded bg-background-dark/30 px-4 py-2 group">
+<summary class="flex cursor-pointer items-center justify-between gap-6 py-2 list-none">
+<p class="text-white text-sm font-medium leading-normal">Color</p>
+<span class="material-symbols-outlined text-white group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<p class="text-primary/70 text-sm font-normal leading-normal pb-2">Background color, text color, and border color controls will be displayed here.</p>
+</details>
+</div>
+</div>
+</aside>
+</main>
+</div>
+</body></html>

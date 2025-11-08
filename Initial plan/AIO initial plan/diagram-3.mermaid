@@ -1,0 +1,71 @@
+erDiagram
+    User ||--o{ Session : has
+    User ||--o{ Project : owns
+    User ||--o{ GoogleDriveAuth : has
+    
+    Session ||--o{ Message : contains
+    Session ||--o{ Context : maintains
+    
+    Project ||--o{ Artifact : contains
+    Project ||--o{ Version : has
+    
+    Message ||--o{ Intent : analyzed_as
+    Intent ||--|| Tool : routes_to
+    
+    Artifact ||--|| Tool : created_by
+    Artifact ||--o{ Version : has
+    
+    Context ||--o{ Variable : stores
+    Context ||--o{ Reference : contains
+    
+    User {
+        uuid id PK
+        string email
+        string name
+        json preferences
+        timestamp created_at
+    }
+    
+    Session {
+        uuid id PK
+        uuid user_id FK
+        json context
+        timestamp started_at
+        timestamp last_activity
+    }
+    
+    Project {
+        uuid id PK
+        uuid user_id FK
+        string name
+        string type
+        json metadata
+        timestamp created_at
+    }
+    
+    Artifact {
+        uuid id PK
+        uuid project_id FK
+        string type
+        string name
+        json data
+        string storage_path
+        timestamp created_at
+    }
+    
+    Message {
+        uuid id PK
+        uuid session_id FK
+        string content
+        string type
+        json metadata
+        timestamp sent_at
+    }
+    
+    Intent {
+        uuid id PK
+        uuid message_id FK
+        string tool_type
+        float confidence
+        json entities
+    }

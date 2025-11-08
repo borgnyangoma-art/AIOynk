@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO Creative Hub - Project Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+    </style>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "deep-navy": "#021B2B",
+                        "ocean-blue": "#0077B6",
+                        "turquoise": "#40E0D0"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "heading": ["Poppins", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem","lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-deep-navy font-display text-white">
+<div class="flex h-screen w-full flex-col">
+<header class="flex h-16 shrink-0 items-center justify-between bg-turquoise px-6 shadow-lg">
+<div class="flex items-center gap-4">
+<button class="text-deep-navy transition-opacity hover:opacity-80">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-heading text-xl font-medium tracking-wider text-deep-navy">Website Mockup</h1>
+</div>
+<button class="text-deep-navy transition-opacity hover:opacity-80">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</header>
+<main class="flex flex-1 flex-col overflow-y-auto">
+<nav class="flex shrink-0 items-center gap-2 border-b border-white/10 px-6">
+<a class="border-b-2 border-turquoise px-3 py-3 text-sm font-medium text-turquoise" href="#">Overview</a>
+<a class="border-b-2 border-transparent px-3 py-3 text-sm font-medium text-white/70 transition-colors hover:text-white" href="#">Files</a>
+<a class="border-b-2 border-transparent px-3 py-3 text-sm font-medium text-white/70 transition-colors hover:text-white" href="#">Versions</a>
+<a class="border-b-2 border-transparent px-3 py-3 text-sm font-medium text-white/70 transition-colors hover:text-white" href="#">Activity</a>
+</nav>
+<div class="flex flex-1 overflow-hidden">
+<div class="flex-1 overflow-y-auto p-6">
+<div class="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3">
+<div class="flex flex-col gap-4 rounded-lg bg-ocean-blue p-4 shadow-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-turquoise">image</span>
+<h3 class="font-medium">Homepage_v3.png</h3>
+</div>
+<p class="text-sm text-white/80">Latest version of the homepage design. Awaiting feedback.</p>
+<p class="mt-auto text-xs text-white/60">Updated 2 hours ago</p>
+</div>
+<div class="flex flex-col gap-4 rounded-lg bg-ocean-blue p-4 shadow-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-turquoise">image</span>
+<h3 class="font-medium">About_Us_v1.png</h3>
+</div>
+<p class="text-sm text-white/80">Initial draft for the About Us page.</p>
+<p class="mt-auto text-xs text-white/60">Updated 5 hours ago</p>
+</div>
+<div class="flex flex-col gap-4 rounded-lg bg-ocean-blue p-4 shadow-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-turquoise">description</span>
+<h3 class="font-medium">Project_Brief.pdf</h3>
+</div>
+<p class="text-sm text-white/80">The main project brief and requirements document.</p>
+<p class="mt-auto text-xs text-white/60">Updated 1 day ago</p>
+</div>
+<div class="flex flex-col gap-4 rounded-lg bg-ocean-blue p-4 shadow-md">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-turquoise">folder</span>
+<h3 class="font-medium">Assets</h3>
+</div>
+<p class="text-sm text-white/80">Folder containing all design assets like icons and logos.</p>
+<p class="mt-auto text-xs text-white/60">Updated 1 day ago</p>
+</div>
+</div>
+</div>
+<aside class="w-[380px] shrink-0 border-l border-white/10 p-6">
+<h2 class="mb-6 text-lg font-medium tracking-wide">Activity</h2>
+<div class="relative pl-6">
+<div class="absolute left-[34px] top-2 h-full w-0.5 bg-turquoise/30"></div>
+<div class="relative mb-8 flex items-start gap-4">
+<div class="absolute left-0 top-1.5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-deep-navy">
+<div class="h-2 w-2 rounded-full bg-white"></div>
+</div>
+<div class="flex-1">
+<p class="font-medium">Project Created</p>
+<p class="text-sm text-white/60">You created the "Website Mockup" project.</p>
+<p class="text-xs text-white/40">2 days ago</p>
+</div>
+</div>
+<div class="relative mb-8 flex items-start gap-4">
+<div class="absolute left-0 top-1.5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-deep-navy">
+<div class="h-2 w-2 rounded-full bg-white"></div>
+</div>
+<div class="flex-1">
+<p class="font-medium">File Uploaded</p>
+<p class="text-sm text-white/60">"Project_Brief.pdf" was added.</p>
+<p class="text-xs text-white/40">1 day ago</p>
+</div>
+</div>
+<div class="relative mb-8 flex items-start gap-4">
+<div class="absolute left-0 top-1.5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-deep-navy">
+<div class="h-2 w-2 rounded-full bg-white"></div>
+</div>
+<div class="flex-1">
+<p class="font-medium">Version 1</p>
+<p class="text-sm text-white/60">"About_Us_v1.png" created.</p>
+<p class="text-xs text-white/40">5 hours ago</p>
+</div>
+</div>
+<div class="relative flex items-start gap-4">
+<div class="absolute left-0 top-1.5 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-deep-navy">
+<div class="h-2 w-2 rounded-full bg-white"></div>
+</div>
+<div class="flex-1">
+<p class="font-medium">New Version</p>
+<p class="text-sm text-white/60">"Homepage_v3.png" updated.</p>
+<p class="text-xs text-white/40">2 hours ago</p>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<div class="absolute bottom-8 right-8">
+<button class="flex items-center gap-2 rounded-lg bg-ocean-blue px-4 py-3 text-white shadow-xl transition-transform hover:scale-105">
+<span class="material-symbols-outlined">chat</span>
+<span>Open in Chat</span>
+</button>
+</div>
+</div>
+
+</body></html>

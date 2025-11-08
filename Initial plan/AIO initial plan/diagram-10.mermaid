@@ -1,0 +1,18 @@
+graph TB
+    subgraph "Observability Stack"
+        APP[Application]
+        METRICS[Prometheus]
+        LOGS[ELK Stack]
+        TRACES[Jaeger]
+        ALERTS[AlertManager]
+        DASH[Grafana]
+    end
+    
+    APP -->|Metrics| METRICS
+    APP -->|Logs| LOGS
+    APP -->|Traces| TRACES
+    METRICS --> ALERTS
+    METRICS --> DASH
+    LOGS --> DASH
+    TRACES --> DASH
+    ALERTS -->|Notify| SLACK[Slack/Email]

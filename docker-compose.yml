@@ -1,0 +1,329 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: aio-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-aio}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-aio_password}
+      POSTGRES_DB: ${DB_NAME:-aio_creative_hub}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-aio}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aio-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: aio-redis
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-aio_redis_password}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aio-network
+
+  # NLP Service
+  nlp-service:
+    build:
+      context: ./services/nlp-service
+      dockerfile: Dockerfile
+    container_name: aio-nlp-service
+    environment:
+      - PORT=3006
+    ports:
+      - "3006:3006"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Backend Service
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: aio-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://${DB_USER:-aio}:${DB_PASSWORD:-aio_password}@postgres:5432/${DB_NAME:-aio_creative_hub}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-aio_redis_password}@redis:6379/0
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+    networks:
+      - aio-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nlp-service:
+        condition: service_healthy
+
+  # Creative Tool Services
+  graphics-service:
+    build:
+      context: ./services/graphics-service
+      dockerfile: Dockerfile
+    container_name: aio-graphics-service
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - graphics_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+
+  web-designer-service:
+    build:
+      context: ./services/web-designer-service
+      dockerfile: Dockerfile
+    container_name: aio-web-designer-service
+    environment:
+      - PORT=3002
+    ports:
+      - "3002:3002"
+    volumes:
+      - webdesigner_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+
+  ide-service:
+    build:
+      context: ./services/ide-service
+      dockerfile: Dockerfile
+    container_name: aio-ide-service
+    environment:
+      - PORT=3003
+    ports:
+      - "3003:3003"
+    volumes:
+      - ide_storage:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+
+  cad-service:
+    build:
+      context: ./services/cad-service
+      dockerfile: Dockerfile
+    container_name: aio-cad-service
+    environment:
+      - PORT=3004
+    ports:
+      - "3004:3004"
+    volumes:
+      - cad_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+
+  video-service:
+    build:
+      context: ./services/video-service
+      dockerfile: Dockerfile
+    container_name: aio-video-service
+    environment:
+      - PORT=3005
+    ports:
+      - "3005:3005"
+    volumes:
+      - video_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: aio-frontend
+    ports:
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    networks:
+      - aio-network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aio-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    networks:
+      - aio-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aio-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - aio-network
+    depends_on:
+      - prometheus
+
+  # Log Aggregation
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: aio-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - aio-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: aio-kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - aio-network
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: aio-logstash
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./monitoring/logstash:/usr/share/logstash/pipeline
+      - ./logs:/logs
+    networks:
+      - aio-network
+    depends_on:
+      - elasticsearch
+
+  # Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: aio-jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+      - "14250:14250"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    networks:
+      - aio-network
+
+  # Alert Manager for Notifications
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: aio-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager:/etc/alertmanager
+    networks:
+      - aio-network
+    depends_on:
+      - prometheus
+
+networks:
+  aio-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  graphics_storage:
+  webdesigner_storage:
+  ide_storage:
+  cad_storage:
+  video_storage:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aio-creative-hub
+  labels:
+    name: aio-creative-hub
+    environment: production

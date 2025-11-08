@@ -1,0 +1,82 @@
+{
+  "index_patterns": ["aio-logs-*", "aio-errors-*", "aio-security-*"],
+  "version": 1,
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1,
+    "index.lifecycle.name": "aio-log-policy",
+    "index.lifecycle.rollover_alias": "aio-logs"
+  },
+  "mappings": {
+    "properties": {
+      "timestamp": {
+        "type": "date",
+        "format": "strict_date_optional_time||epoch_millis"
+      },
+      "level": {
+        "type": "keyword"
+      },
+      "service": {
+        "type": "keyword"
+      },
+      "environment": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text",
+        "analyzer": "standard"
+      },
+      "error": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "message": {
+            "type": "text"
+          },
+          "stack": {
+            "type": "text"
+          }
+        }
+      },
+      "context": {
+        "type": "object",
+        "enabled": true
+      },
+      "metadata": {
+        "type": "object",
+        "enabled": true
+      },
+      "userId": {
+        "type": "keyword"
+      },
+      "sessionId": {
+        "type": "keyword"
+      },
+      "correlationId": {
+        "type": "keyword"
+      },
+      "ip": {
+        "type": "ip"
+      },
+      "userAgent": {
+        "type": "keyword"
+      },
+      "geoip": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "geo_point"
+          },
+          "country_name": {
+            "type": "keyword"
+          },
+          "city_name": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}

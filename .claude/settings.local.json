@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree -a -L 4 /Users/nyangomaborg/Downloads/YNK platfrom start/aio-creative-hub-implementation-task-list-spec-2025-11-05)",
+      "Bash(tree -L 2 -I \"node_modules|dist|.git\" /Users/nyangomaborg/Downloads/YNK platfrom start/aio-creative-hub-implementation-task-list-spec-2025-11-05/)",
+      "Bash(npm install openai)",
+      "mcp__rube__RUBE_SEARCH_TOOLS",
+      "mcp__rube__RUBE_MULTI_EXECUTE_TOOL",
+      "Bash(node verify-openai.js)",
+      "Bash(tree -L 3 -I \"node_modules\")",
+      "Bash(tree -L 2 -I \"node_modules\" /Users/nyangomaborg/Downloads/YNKplatfromstart/aio-creative-hub-implementation-task-list-spec-2025-11-05/)",
+      "Bash(tree -L 2 -I \"node_modules|dist|.git\" /Users/nyangomaborg/Downloads/YNK platfrom start/AIO)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/.eslintrc.js)",
+      "Bash(test -d /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/.husky)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/apps/backend/src/index.ts)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/packages/shared/src/index.ts)",
+      "Bash(test -d /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/services/nlp)",
+      "Bash(test -d /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/services/nlp/src)",
+      "Bash(cat /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/tsconfig.json)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/apps/backend/Dockerfile)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/apps/frontend/Dockerfile)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/services/nlp/Dockerfile)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/services/graphics-service/Dockerfile)",
+      "Bash(test -f /Users/nyangomaborg/Downloads/YNK platfrom start/AIO/services/web-designer-service/Dockerfile)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

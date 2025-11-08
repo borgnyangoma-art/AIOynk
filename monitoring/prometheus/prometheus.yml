@@ -1,0 +1,92 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Backend API
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Graphics Service
+  - job_name: 'graphics-service'
+    static_configs:
+      - targets: ['graphics-service:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Web Designer Service
+  - job_name: 'web-designer-service'
+    static_configs:
+      - targets: ['web-designer-service:3002']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # IDE Service
+  - job_name: 'ide-service'
+    static_configs:
+      - targets: ['ide-service:3003']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # CAD Service
+  - job_name: 'cad-service'
+    static_configs:
+      - targets: ['cad-service:3004']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Video Service
+  - job_name: 'video-service'
+    static_configs:
+      - targets: ['video-service:3005']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+
+  # Node Exporter (for system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # cAdvisor (for container metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+
+  # Postgres Exporter
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  # Jaeger Collector
+  - job_name: 'jaeger'
+    static_configs:
+      - targets: ['jaeger:14269']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']

@@ -1,0 +1,56 @@
+{
+  "name": "aio-creative-hub",
+  "version": "1.0.0",
+  "description": "Chat-powered creative hub for design, coding, 3D modeling, and video editing",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:nlp\"",
+    "dev:backend": "npm run dev --workspace=apps/backend",
+    "dev:frontend": "npm run dev --workspace=apps/frontend",
+    "dev:nlp": "npm run dev --workspace=services/nlp-service",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=apps/backend",
+    "build:frontend": "npm run build --workspace=apps/frontend",
+    "build:nlp": "npm run build --workspace=services/nlp-service",
+    "test": "npm run test --workspaces",
+    "test:backend": "npm run test --workspace=apps/backend",
+    "test:frontend": "npm run test --workspace=apps/frontend",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:performance": "k6 run tests/performance/api-load-test.js",
+    "test:stress": "k6 run tests/performance/stress-test.js",
+    "test:websocket": "k6 run tests/performance/websocket-test.js",
+    "test:rate-limit": "k6 run tests/performance/rate-limit-test.js",
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e && npm run test:performance",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "clean": "rimraf node_modules apps/*/node_modules services/*/node_modules packages/*/node_modules",
+    "db:migrate": "npm run migrate --workspace=apps/backend",
+    "db:seed": "npm run seed --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.1",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-prettier": "^5.1.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^16.2.6",
+    "prettier": "^3.1.1",
+    "rimraf": "^5.0.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

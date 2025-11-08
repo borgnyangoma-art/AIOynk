@@ -1,0 +1,457 @@
+groups:
+  - name: aio-alerts
+    rules:
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 5 minutes on {{ $labels.instance }}"
+
+      # High Disk Usage
+      - alert: HighDiskUsage
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is above 80% on {{ $labels.instance }}:{{ $labels.mountpoint }}"
+
+      # Backend Service Down
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service has been down for more than 1 minute"
+
+      # Graphics Service Down
+      - alert: GraphicsServiceDown
+        expr: up{job="graphics-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Graphics service is down"
+          description: "Graphics service has been down for more than 2 minutes"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for more than 5 minutes"
+
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 500ms for more than 5 minutes"
+
+      # Database Connection Issues
+      - alert: DatabaseDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 1 minute"
+
+      # Redis Down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute"
+
+      # Container High CPU
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container high CPU usage"
+          description: "Container {{ $labels.name }} CPU usage is above 80% for more than 5 minutes"
+
+  # ====================
+  # Application Business Metrics Alerts
+  # ====================
+  - name: aio-business-metrics
+    rules:
+      # High Error Rate - Critical
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 10% for more than 5 minutes on {{ $labels.service }}"
+
+      # Low User Engagement
+      - alert: LowUserActivity
+        expr: rate(user_logins_total[1h]) < 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low user activity detected"
+          description: "User login rate is below 5 per hour, possible system issue"
+
+      # High Authentication Failures
+      - alert: HighAuthFailureRate
+        expr: rate(auth_failures_total[5m]) / rate(user_logins_total[5m]) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is above 30%"
+
+      # Service Down - Creative Tools
+      - alert: CreativeToolDown
+        expr: up{job=~"graphics-service|web-designer-service|ide-service|cad-service|video-service"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes"
+
+  # ====================
+  # Tool-Specific Alerts
+  # ====================
+  - name: aio-creative-tools
+    rules:
+      # Graphics Service Issues
+      - alert: GraphicsServiceHighLatency
+        expr: histogram_quantile(0.95, rate(canvas_operation_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Graphics service high latency"
+          description: "95th percentile canvas operation latency is above 5 seconds"
+
+      - alert: GraphicsServiceHighErrorRate
+        expr: rate(canvas_operations_total{status="error"}[5m]) / rate(canvas_operations_total[5m]) > 0.15
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Graphics service high error rate"
+          description: "Error rate is above 15% for canvas operations"
+
+      # Web Designer Issues
+      - alert: WebDesignerHighLatency
+        expr: histogram_quantile(0.95, rate(code_generation_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Web designer high latency"
+          description: "95th percentile code generation latency is above 10 seconds"
+
+      - alert: AccessibilityCheckFailures
+        expr: rate(accessibility_checks_total{result="fail"}[10m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High accessibility check failures"
+          description: "More than 10 accessibility check failures in 10 minutes"
+
+      # IDE Service Issues
+      - alert: IDEServiceHighLatency
+        expr: histogram_quantile(0.95, rate(code_execution_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "IDE service high latency"
+          description: "95th percentile code execution latency is above 30 seconds"
+
+      - alert: SecurityViolations
+        expr: rate(security_violations_total{severity="critical"}[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Security violations detected"
+          description: "More than 1 critical security violation per minute"
+
+      # CAD Service Issues
+      - alert: CADServiceHighLatency
+        expr: histogram_quantile(0.95, rate(model_generation_duration_seconds_bucket[5m])) > 15
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CAD service high latency"
+          description: "95th percentile model generation latency is above 15 seconds"
+
+      - alert: CADModelComplexityHigh
+        expr: active_vertices > 100000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High model complexity"
+          description: "Active model has more than 100,000 vertices, may impact performance"
+
+      # Video Service Issues
+      - alert: VideoServiceHighLatency
+        expr: histogram_quantile(0.95, rate(video_processing_duration_seconds_bucket[5m])) > 120
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Video service high latency"
+          description: "95th percentile video processing latency is above 2 minutes"
+
+      - alert: VideoRenderJobsStuck
+        expr: render_jobs_total{status="processing"} > 10
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Video render jobs stuck"
+          description: "More than 10 render jobs stuck in processing state for more than 10 minutes"
+
+  # ====================
+  # Performance Alerts
+  # ====================
+  - name: aio-performance
+    rules:
+      # High Response Time
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 500ms for more than 5 minutes on {{ $labels.service }}"
+
+      # Very High Response Time
+      - alert: VeryHighResponseTime
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high response time detected"
+          description: "99th percentile response time is above 2 seconds for more than 2 minutes on {{ $labels.service }}"
+
+      # High Database Query Time
+      - alert: HighDatabaseQueryTime
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High database query time"
+          description: "95th percentile database query time is above 1 second"
+
+      # High Cache Miss Rate
+      - alert: HighCacheMissRate
+        expr: rate(cache_hits_total{status="miss"}[5m]) / rate(cache_hits_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High cache miss rate"
+          description: "Cache miss rate is above 50%"
+
+  # ====================
+  # Resource Usage Alerts
+  # ====================
+  - name: aio-resources
+    rules:
+      # High Memory Usage - Backend
+      - alert: BackendHighMemoryUsage
+        expr: process_memory_usage_bytes / 1024 / 1024 > 512
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backend high memory usage"
+          description: "Backend service memory usage is above 512MB"
+
+      # Very High Memory Usage - Backend
+      - alert: BackendVeryHighMemoryUsage
+        expr: process_memory_usage_bytes / 1024 / 1024 > 1024
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend very high memory usage"
+          description: "Backend service memory usage is above 1GB"
+
+      # High CPU Usage - Services
+      - alert: ServiceHighCPU
+        expr: process_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Service high CPU usage"
+          description: "{{ $labels.service }} CPU usage is above 80%"
+
+      # Very High CPU Usage - Services
+      - alert: ServiceVeryHighCPU
+        expr: process_cpu_usage_percent > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service very high CPU usage"
+          description: "{{ $labels.service }} CPU usage is above 95%"
+
+  # ====================
+  # WebSocket & Real-time Alerts
+  # ====================
+  - name: aio-realtime
+    rules:
+      # WebSocket Connection Drops
+      - alert: WebSocketConnectionDrops
+        expr: rate(websocket_connections_total{status="success"}[1m]) < 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket connection drops detected"
+          description: "WebSocket connections are dropping unexpectedly"
+
+      # High WebSocket Message Rate
+      - alert: HighWebSocketMessageRate
+        expr: rate(websocket_messages_total[1m]) > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High WebSocket message rate"
+          description: "WebSocket message rate is above 1000 per minute"
+
+      # WebSocket Connections High
+      - alert: WebSocketConnectionsHigh
+        expr: active_websocket_connections > 1000
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of WebSocket connections"
+          description: "Active WebSocket connections are above 1000"
+
+  # ====================
+  # NLP & AI Metrics Alerts
+  # ====================
+  - name: aio-ai-metrics
+    rules:
+      # Low NLP Confidence
+      - alert: LowNlpConfidenceRate
+        expr: rate(nlp_intent_classifications_total{confidence_level="low"}[5m]) / rate(nlp_intent_classifications_total[5m]) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low NLP confidence rate"
+          description: "More than 30% of NLP classifications have low confidence"
+
+      # High NLP Processing Time
+      - alert: HighNlpProcessingTime
+        expr: histogram_quantile(0.95, rate(nlp_processing_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High NLP processing time"
+          description: "95th percentile NLP processing time is above 2 seconds"
+
+  # ====================
+  # Rate Limiting & Security Alerts
+  # ====================
+  - name: aio-security
+    rules:
+      # Rate Limit Violations
+      - alert: RateLimitViolations
+        expr: rate(rate_limit_violations_total[1m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit violations"
+          description: "More than 10 rate limit violations per minute"
+
+      # High Security Event Rate
+      - alert: HighSecurityEventRate
+        expr: rate(security_events_total{severity="critical"}[5m]) > 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High critical security event rate"
+          description: "More than 1 critical security event per minute"
+
+  # ====================
+  # Storage & Artifact Alerts
+  # ====================
+  - name: aio-storage
+    rules:
+      # High Storage Usage
+      - alert: HighStorageUsage
+        expr: storage_usage_bytes / 1024 / 1024 / 1024 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High storage usage"
+          description: "Storage usage is above 80GB"
+
+      # Very High Storage Usage
+      - alert: VeryHighStorageUsage
+        expr: storage_usage_bytes / 1024 / 1024 / 1024 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Very high storage usage"
+          description: "Storage usage is above 95GB"
+
+      # Large Artifacts Created
+      - alert: LargeArtifactsCreated
+        expr: rate(artifact_size_bytes_sum[1h]) / rate(artifact_size_bytes_count[1h]) > 104857600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large artifacts being created"
+          description: "Average artifact size is above 100MB"

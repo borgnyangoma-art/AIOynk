@@ -1,0 +1,20 @@
+graph LR
+    subgraph "Multi-Layer Caching"
+        BROWSER[Browser Cache]
+        CDN[CDN Cache]
+        REDIS[Redis Cache]
+        APP[Application Cache]
+        DB[Database Cache]
+    end
+    
+    REQUEST[Request] --> BROWSER
+    BROWSER -->|Miss| CDN
+    CDN -->|Miss| REDIS
+    REDIS -->|Miss| APP
+    APP -->|Miss| DB
+    
+    DB -->|Data| APP
+    APP -->|Cache| REDIS
+    REDIS -->|Cache| CDN
+    CDN -->|Cache| BROWSER
+    BROWSER -->|Response| REQUEST

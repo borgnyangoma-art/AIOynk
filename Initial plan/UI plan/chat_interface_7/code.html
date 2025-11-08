@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO Creative Hub - Conversational Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+    </style>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3ee0cf",
+              "background-light": "#f6f8f8",
+              "background-dark": "#12201f",
+              "deep-navy": "#021B2B",
+              "ocean-blue": "#0077B6",
+              "turquoise": "#40E0D0"
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "1rem", /* 16px */
+              "lg": "2rem",
+              "xl": "3rem",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-deep-navy font-display text-white">
+<div class="flex h-screen w-full">
+<!-- Left Sidebar -->
+<aside class="flex w-64 flex-col bg-[#0077b6]/20 p-4">
+<div class="mb-6 flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="AIO Creative Hub logo with an abstract wave pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCJwCWalfn3pUsI1rPlkWRwGhfkHrKKwXl1jecxVFg-45RGo3K9dV8dNbHlQcFsJgkxP7QwzTi-sx6wr4XjFPnfqqUZln9aKLeAXsNFbYTOn8ikKVCPHesVe60VtCq6f5X8eiAyX3M1NG3J7t5cPlA5DHsEkVW2zyyM-_qIqGJY8_BOmVec6jSFXY1lPtvA9_SqbZj3x2UD9f28Yi-PXkOPYHbyIgjnwqlveQkhMGO6s9p49RQYGsUz5cxyXuwnJkXvVe0XtDT4ZA");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-medium leading-normal tracking-wide">AIO Creative Hub</h1>
+<p class="text-turquoise text-sm font-normal leading-normal">Workspace</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 rounded-full bg-turquoise/20 px-3 py-2" href="#">
+<span class="material-symbols-outlined text-turquoise text-[24px]">web</span>
+<p class="text-white text-sm font-medium leading-normal">Website Mockup</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">photo_library</span>
+<p class="text-white text-sm font-medium leading-normal">Social Media Post</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">palette</span>
+<p class="text-white text-sm font-medium leading-normal">Logo Design</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">edit</span>
+<p class="text-white text-sm font-medium leading-normal">Content Generation</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">account_tree</span>
+<p class="text-white text-sm font-medium leading-normal">UX Flow Diagram</p>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">settings</span>
+<p class="text-white text-sm font-medium leading-normal">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-white/10 rounded-full" href="#">
+<span class="material-symbols-outlined text-white text-[24px]">help</span>
+<p class="text-white text-sm font-medium leading-normal">Help</p>
+</a>
+</div>
+</aside>
+<!-- Center Chat Area -->
+<main class="flex flex-1 flex-col bg-deep-navy">
+<div class="flex flex-1 flex-col overflow-y-auto p-6">
+<div class="flex flex-col gap-6">
+<!-- AI Message -->
+<div class="flex items-end gap-3 p-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0" data-alt="AIO Assistant avatar with an abstract wave pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCynNRMz3uWdJTQvTik2tifAolumNdgK3Wbr7T7zjrhq_i-VCiNsYjZRJwlXucPV2p4GWt7_YaPmeed_4sbamzI0tA5WkJxjKDZ1DHNX8ZqdH4t65SpofMqd0Dq4Gnw2pq6QtKpu4tSCyQ3JomhsuFicQAaPf6FdRb1RPjguVaTx0FX2aXvfRmsvJUD2aMR7y19Prple6JR9DHbzGbSJue2gcfo-EFTXC0LKDxnDHXJgWyC_4DL9XHngyf_MfMlkwmOOSj2zYRVJA");'></div>
+<div class="flex flex-1 flex-col gap-1 items-start">
+<p class="text-turquoise text-[13px] font-normal leading-normal max-w-[360px]">AIO Assistant</p>
+<p class="text-base font-normal leading-normal flex max-w-[480px] rounded-t-lg rounded-br-lg px-4 py-3 bg-ocean-blue text-white shadow-md">
+                                Welcome to AIO! What would you like to create today? You can ask me to design a website mockup, open the graphics editor, or save files to your drive.
+                            </p>
+</div>
+</div>
+<!-- User Message -->
+<div class="flex items-end gap-3 p-4 justify-end">
+<div class="flex flex-1 flex-col gap-1 items-end">
+<p class="text-turquoise text-[13px] font-normal leading-normal max-w-[360px] text-right">User</p>
+<p class="text-base font-normal leading-normal flex max-w-[480px] rounded-t-lg rounded-bl-lg px-4 py-3 bg-turquoise text-deep-navy shadow-md">Can you help me design a new logo?</p>
+</div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 shrink-0" data-alt="User avatar with a simple initial" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAPyfvUYs8oGMBjQ8evg_FIhjNbNS8EhF5L01IyQlxyeFHMz0k_No-EpNsHWOi0djC7kQurjOEWbuIoE7rAx69OdQYPisSsqrveOvYRW6DvahcIy3ljyyo4zqSp4rDBvgEwNDh8a-Q78neFAtE78Aatp_aXax2hS9veX92TQOtmwPvHEIYBrkiPpPB66emhBCVavCo_n7zOhUs-R-kMqbHdnBS8bnu4rV1bZ6b5sMfnlBSMEuZzV1_aHkG0lu9PUxpBUqYKLPUj9w");'></div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="px-6 pb-6 pt-2">
+<!-- Suggestion Chips -->
+<div class="mb-3 flex gap-3 flex-wrap">
+<button class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-turquoise/20 px-4 text-sm font-medium text-white transition-colors hover:bg-turquoise/40">Open Graphics Editor</button>
+<button class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-turquoise/20 px-4 text-sm font-medium text-white transition-colors hover:bg-turquoise/40">Design a Web Mockup</button>
+<button class="flex h-8 shrink-0 cursor-pointer items-center justify-center gap-x-2 rounded-full bg-turquoise/20 px-4 text-sm font-medium text-white transition-colors hover:bg-turquoise/40">Save to Drive</button>
+</div>
+<!-- Composer -->
+<div class="flex items-center gap-4">
+<label class="flex flex-col min-w-40 h-12 flex-1">
+<div class="flex w-full flex-1 items-stretch rounded-lg h-full border border-turquoise/50 focus-within:border-turquoise bg-[#0077b6]/20 shadow-lg">
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-l-lg text-white focus:outline-0 focus:ring-0 border-none bg-transparent h-full placeholder:text-white/60 px-4 text-base font-normal leading-normal" placeholder="Ask AIO to create something..." value=""/>
+<div class="flex items-center justify-center pr-2">
+<button class="flex items-center justify-center p-1.5 text-white/60 hover:text-white">
+<span class="material-symbols-outlined text-[20px]">attach_file</span>
+</button>
+<button class="flex items-center justify-center p-1.5 text-white/60 hover:text-white">
+<span class="material-symbols-outlined text-[20px]">mic</span>
+</button>
+</div>
+</div>
+</label>
+<button class="flex size-12 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-ocean-blue text-white transition-colors hover:bg-ocean-blue/80">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Right Tool Pane -->
+<aside class="flex w-96 flex-col bg-turquoise/10 p-4 shadow-2xl">
+<div class="flex items-center justify-between pb-4">
+<h2 class="text-lg font-medium tracking-wide text-white">Graphics Editor</h2>
+<button class="p-1 text-white/70 hover:text-white">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-white/30 bg-black/20">
+<p class="text-white/60">Tool content will appear here.</p>
+</div>
+</aside>
+</div>
+</body></html>

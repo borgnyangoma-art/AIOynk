@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AIO - All in One Creative Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#3ee0cf",
+              "background-light": "#f6f8f8",
+              "background-dark": "#021B2B",
+              "ocean-blue": "#0077B6",
+              "turquoise": "#40E0D0"
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style type="text/tailwindcss">
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-white">
+<div class="relative flex h-screen w-full flex-row overflow-hidden">
+<!-- Left Side Panel (Layers) -->
+<aside class="flex h-full w-64 flex-shrink-0 flex-col bg-ocean-blue p-4">
+<div class="flex items-center gap-3 pb-6">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="AIO Hub logo with abstract waves" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuChxMuV2VN2P1HrWy9Mps62yMyc4b7veQz14i5YdNwkt5Gy9R0iyoEu_9L7EZjCyfNXnq5dQHlTZ3xIJxxKrvtgW37FRYhdbzpEQX_f3U-Tig-uc929i85oeU422ze_ETNLdPMhAMV8fAj50W57XOV1kU8f3STywmxEvDoczISMLliWwq0KiCMu6NY577cg4Ea_dtZBs9hTTISV1xm9AtyEdejTPyWqPxCd1NVcmEqDCsRBTNsqEm7BNwzJDRLB4bQ9-IB3yjBvtQ");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-medium leading-normal tracking-wider">AIO Hub</h1>
+<p class="text-white/70 text-sm font-normal leading-normal">Creative Workspace</p>
+</div>
+</div>
+<div class="flex grow flex-col gap-3">
+<h2 class="px-2 text-sm font-medium uppercase tracking-widest text-white/80">Layers</h2>
+<!-- ImageGrid Component adapted for Layers -->
+<div class="grid grid-cols-1 gap-3">
+<div class="flex cursor-pointer items-center gap-3 rounded-lg bg-white/10 p-2 ring-2 ring-turquoise">
+<div class="w-14 shrink-0 bg-center bg-no-repeat aspect-square bg-cover rounded" data-alt="Thumbnail of a gradient background layer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCqnChJ1tyzxeuVSVuRII-s1f_-FMPqDQgp3Aqv7YZADL9srYzbzDxc5-6UcX1ZpX2Z7WaJYdFTG6bjXfR1dvsaHTgZxfBJ4-sC775jEIeLu4kwAOzWOkRf_mbBdD2Ag-jl8XHrJUbsiV5zmrlMSJhImxoIQoyAf-ftwItiE-UtgwyJuRLq-RRQvgunhQvd_GSCH97aJzvReG-wJLr0WMF2zGS9ggkB1akEBeZLIBi4cWsUSPqAj5lTJYaTULRttoDr-Xls9JWI3w");'></div>
+<div>
+<p class="text-white text-sm font-medium leading-normal">Layer 1: Background</p>
+<p class="text-white/70 text-xs font-normal leading-normal">Gradient Fill</p>
+</div>
+</div>
+<div class="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-white/10">
+<div class="w-14 shrink-0 bg-center bg-no-repeat aspect-square bg-cover rounded" data-alt="Thumbnail of a text layer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCB0bwr1rxz4x8LxsF53dWs1qugNXsRt7cTjmtJfkkprOip1SOIVyNRRHaPFtcw15kgsiWMsZ0zIFoehHJfiZkF4PYfrBbQQMru864zYflTLHUesJ8S3dZT5VVygMJzSPLo2RSu2T4cJfZUyS8bl4B6ZiUq_I0yonxkhL_0gzEi5kZTTRRLkdPJy2i6_3DfD7tkXW4f4wOBdRxjDSec-LlBFWFl7-mfinbldHwna1YQqzCvkv1u1RLBCkDbQqH_-hXmNx_XwuMEwg");'></div>
+<div>
+<p class="text-white text-sm font-medium leading-normal">Layer 2: Text Element</p>
+<p class="text-white/70 text-xs font-normal leading-normal">Poppins, Medium</p>
+</div>
+</div>
+<div class="flex cursor-pointer items-center gap-3 rounded-lg p-2 hover:bg-white/10">
+<div class="w-14 shrink-0 bg-center bg-no-repeat aspect-square bg-cover rounded" data-alt="Thumbnail of a shape layer" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDq6c0g0UJqfdQ0r62vxHWxWRE2l771WMR616Gk2j0AbPdCqCSY14bpnu5mAyDSvDNt-JuHkXF9HDD02_DPZJwSlCb2gPUHjln5KvBLm2PVYn5vyFOyPQ6ZPicsjhMoEUMEvOqr_uK7h5Uk83gTWanm6czpUvEu8f_t4Ny7YYK87FErm2nRR3NaowWPo2kjkRKYX1rfu5Oh1rAvMTeEXYlQDMzVq8CX8bhTjZdwWbZSjSJigeNEr3jMmtBU6ZVkTfV9L1BLO-ujHw");'></div>
+<div>
+<p class="text-white text-sm font-medium leading-normal">Layer 3: Shape</p>
+<p class="text-white/70 text-xs font-normal leading-normal">Rectangle</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="relative flex flex-1 flex-col">
+<!-- Main Canvas -->
+<div class="flex-grow bg-gradient-to-br from-turquoise/20 to-cyan-500/10">
+<!-- This is the main canvas area where user content would go. -->
+</div>
+<!-- Floating Action Button -->
+<div class="absolute bottom-5 right-20">
+<button class="flex h-14 cursor-pointer items-center justify-center gap-3 overflow-hidden rounded-full bg-ocean-blue px-6 text-white shadow-lg transition-all hover:bg-ocean-blue/90">
+<span class="material-symbols-outlined text-white">ios_share</span>
+<span class="truncate text-base font-bold leading-normal tracking-wide">Export Image</span>
+</button>
+</div>
+</main>
+<!-- Vertical Toolbar -->
+<aside class="flex h-full w-16 flex-shrink-0 flex-col items-center gap-2 bg-turquoise p-3">
+<button class="group relative rounded-full bg-white p-3 text-background-dark shadow-md">
+<span class="material-symbols-outlined text-background-dark">crop</span>
+<span class="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap rounded bg-background-dark px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">Crop</span>
+</button>
+<button class="group relative rounded-full p-3 text-white transition-colors hover:bg-white/20">
+<span class="material-symbols-outlined text-white">aspect_ratio</span>
+<span class="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap rounded bg-background-dark px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">Resize</span>
+</button>
+<button class="group relative rounded-full p-3 text-white transition-colors hover:bg-white/20">
+<span class="material-symbols-outlined text-white">brush</span>
+<span class="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap rounded bg-background-dark px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">Draw</span>
+</button>
+<button class="group relative rounded-full p-3 text-white transition-colors hover:bg-white/20">
+<span class="material-symbols-outlined text-white">title</span>
+<span class="pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 whitespace-nowrap rounded bg-background-dark px-2 py-1 text-sm text-white opacity-0 transition-opacity group-hover:opacity-100">Text</span>
+</button>
+</aside>
+</div>
+</body></html>
