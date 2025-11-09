@@ -4,6 +4,7 @@ import config from '../utils/config'
 import database from '../utils/database'
 
 import logger from './logger.service'
+import metricsService from './metrics.service'
 
 export interface SessionRecord {
   id: string
@@ -44,6 +45,7 @@ export class SessionService {
 
   async initialize(): Promise<void> {
     await this.cleanupExpiredSessions()
+    await this.refreshActiveSessionGauge()
     this.cleanupTimer = setInterval(() => {
       void this.cleanupExpiredSessions()
     }, this.cleanupIntervalMs)
@@ -68,6 +70,7 @@ export class SessionService {
       })
       .returning('*')
 
+    await this.refreshActiveSessionGauge()
     return session as SessionRecord
   }
 
@@ -104,10 +107,13 @@ export class SessionService {
     sessionId: string,
     reason: string = 'user_logout',
   ): Promise<void> {
-    await database('sessions').where('id', sessionId).update({
-      revoked_at: new Date(),
-      revoked_reason: reason,
-    })
+    await database('sessions')
+      .where('id', sessionId)
+      .update({
+        revoked_at: new Date(),
+        revoked_reason: reason,
+      })
+    await this.refreshActiveSessionGauge()
   }
 
   async revokeAllSessionsForUser(
@@ -121,6 +127,7 @@ export class SessionService {
         revoked_at: new Date(),
         revoked_reason: reason,
       })
+    await this.refreshActiveSessionGauge()
   }
 
   async cleanupExpiredSessions(): Promise<void> {
@@ -135,6 +142,7 @@ export class SessionService {
 
       if (updated > 0) {
         logger.info(`Session service cleaned up ${updated} expired session(s)`)
+        await this.refreshActiveSessionGauge()
       }
     } catch (error) {
       logger.error('Failed to clean up sessions', error as Error)
@@ -168,6 +176,20 @@ export class SessionService {
         return amount * 24 * 60 * 60 * 1000
       default:
         return 7 * 24 * 60 * 60 * 1000 // fallback to one week
+    }
+  }
+
+  private async refreshActiveSessionGauge(): Promise<void> {
+    try {
+      const queryResult = (await database('sessions')
+        .whereNull('revoked_at')
+        .andWhere('expires_at', '>', new Date())
+        .count<{ count: string }>('id as count')) as unknown as Array<{ count: string }>
+      const [row = { count: '0' }] = queryResult
+      const count = Number(row.count ?? 0)
+      metricsService.activeSessionsTotal.set(count)
+    } catch (error) {
+      logger.warn('Failed to refresh active session gauge', error as Error)
     }
   }
 }

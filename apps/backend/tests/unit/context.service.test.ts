@@ -1,8 +1,18 @@
+const store = new Map<string, string>()
+
+const metricsMock = {
+  contextOperationsTotal: { inc: jest.fn() },
+  contextSizeBytes: { set: jest.fn() },
+}
+
+jest.mock('../../src/services/metrics.service', () => ({
+  __esModule: true,
+  default: metricsMock,
+}))
+
 import contextService, {
   ConversationMessage,
 } from '../../src/services/context.service'
-
-const store = new Map<string, string>()
 
 const redisMock = {
   get: jest.fn(async (key: string) => store.get(key) ?? null),
@@ -22,6 +32,8 @@ describe('ContextService', () => {
   beforeEach(() => {
     store.clear()
     Object.values(redisMock).forEach((fn) => (fn as jest.Mock).mockClear())
+    metricsMock.contextOperationsTotal.inc.mockClear()
+    metricsMock.contextSizeBytes.set.mockClear()
   })
 
   it('appends messages and persists to redis', async () => {
@@ -66,5 +78,23 @@ describe('ContextService', () => {
 
     expect(store.size).toBe(0)
     expect(redisMock.del).toHaveBeenCalled()
+  })
+
+  it('stores cross-tool artifact references with enforced limits', async () => {
+    for (let index = 0; index < 30; index += 1) {
+      await contextService.addArtifactReference('session-tools', {
+        id: `artifact-${index}`,
+        tool: index % 2 === 0 ? 'graphics' : 'video',
+        name: `Artifact ${index}`,
+      })
+    }
+
+    const references = await contextService.getArtifactReferences('session-tools')
+    expect(references).toHaveLength(25)
+    expect(references[references.length - 1].tool).toBe('video')
+
+    await contextService.removeArtifactReference('session-tools', references[0].id)
+    const afterRemoval = await contextService.getArtifactReferences('session-tools')
+    expect(afterRemoval).toHaveLength(24)
   })
 })

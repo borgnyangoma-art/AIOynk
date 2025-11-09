@@ -6,6 +6,8 @@ import { authenticate, AuthRequest } from '../middleware/auth.middleware'
 import jwtService from '../services/jwt.service'
 import sessionService from '../services/session.service'
 import database from '../utils/database'
+import logger from '../services/logger.service'
+import metricsService from '../services/metrics.service'
 
 const router = Router()
 
@@ -70,66 +72,88 @@ router.post(
     body('lastName').notEmpty().withMessage('Last name is required'),
   ],
   async (req: Request, res: Response) => {
-    if (handleValidationErrors(req, res)) {return}
-
-    const { email, password, firstName, lastName } = req.body
-    const safeFirstName = sanitizeText(firstName || '')
-    const safeLastName = sanitizeText(lastName || '')
-
-    const existingUser = await database('users')
-      .whereRaw('LOWER(email) = ?', email.toLowerCase())
-      .first()
-
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        error: 'Email already in use',
-      })
+    if (handleValidationErrors(req, res)) {
+      return
     }
 
-    const passwordHash = await bcrypt.hash(password, hashRounds)
+    try {
+      const { email, password, firstName, lastName } = req.body
+      const safeFirstName = sanitizeText(firstName || '')
+      const safeLastName = sanitizeText(lastName || '')
 
-    const [user] = await database('users')
-      .insert({
-        email,
-        password_hash: passwordHash,
-        first_name: safeFirstName,
-        last_name: safeLastName,
-        role: 'user',
-        email_verified: false,
-        is_active: true,
+      const existingUser = await database('users')
+        .whereRaw('LOWER(email) = ?', email.toLowerCase())
+        .first()
+
+      if (existingUser) {
+        metricsService.authFailuresTotal.inc({
+          auth_type: 'registration',
+          reason: 'email_exists',
+        })
+        return res.status(409).json({
+          success: false,
+          error: 'Email already in use',
+        })
+      }
+
+      const passwordHash = await bcrypt.hash(password, hashRounds)
+
+      const [user] = await database('users')
+        .insert({
+          email,
+          password_hash: passwordHash,
+          first_name: safeFirstName,
+          last_name: safeLastName,
+          role: 'user',
+          email_verified: false,
+          is_active: true,
+        })
+        .returning('*')
+
+      await database('user_preferences').insert({
+        user_id: user.id,
+        preferences: {
+          theme: 'light',
+          language: 'en',
+          notifications: true,
+        },
       })
-      .returning('*')
 
-    await database('user_preferences').insert({
-      user_id: user.id,
-      preferences: {
-        theme: 'light',
-        language: 'en',
-        notifications: true,
-      },
-    })
+      const tokens = jwtService.generateTokens(user.id, user.email, user.role)
+      await sessionService.createSession({
+        userId: user.id,
+        refreshTokenHash: await sessionService.hashRefreshToken(
+          tokens.refreshToken,
+        ),
+        deviceInfo: req.get('user-agent') || 'unknown',
+        ipAddress: req.ip || req.socket.remoteAddress || undefined,
+        expiresAt: sessionService.getRefreshExpiryDate(),
+      })
 
-    const tokens = jwtService.generateTokens(user.id, user.email, user.role)
-    await sessionService.createSession({
-      userId: user.id,
-      refreshTokenHash: await sessionService.hashRefreshToken(
-        tokens.refreshToken,
-      ),
-      deviceInfo: req.get('user-agent') || 'unknown',
-      ipAddress: req.ip || req.socket.remoteAddress || undefined,
-      expiresAt: sessionService.getRefreshExpiryDate(),
-    })
+      metricsService.userRegistrationsTotal.inc({ method: 'email_password' })
+      logger.info('User registered', { userId: user.id, email })
 
-    res.status(201).json({
-      success: true,
-      data: {
-        user: formatUser(user),
-        tokens,
-      },
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    })
+      res.status(201).json({
+        success: true,
+        data: {
+          user: formatUser(user),
+          tokens,
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      })
+    } catch (error) {
+      logger.error('User registration failed', error as Error)
+      metricsService.appErrorsTotal.inc({
+        error_type: 'registration_error',
+        service: 'backend',
+        severity: 'error',
+      })
+      res.status(500).json({
+        success: false,
+        error: 'Registration failed',
+      })
+    }
   },
 )
 
@@ -140,54 +164,86 @@ router.post(
     body('password').notEmpty().withMessage('Password is required'),
   ],
   async (req: Request, res: Response) => {
-    if (handleValidationErrors(req, res)) {return}
-
-    const { email, password } = req.body
-
-    const user = await database('users')
-      .whereRaw('LOWER(email) = ?', email.toLowerCase())
-      .first()
-
-    if (!user || !user.password_hash) {
-      return res
-        .status(401)
-        .json({ success: false, error: 'Invalid credentials' })
+    if (handleValidationErrors(req, res)) {
+      return
     }
 
-    const isValidPassword = await bcrypt.compare(password, user.password_hash)
-    if (!isValidPassword) {
-      return res
-        .status(401)
-        .json({ success: false, error: 'Invalid credentials' })
+    try {
+      const { email, password } = req.body
+
+      const user = await database('users')
+        .whereRaw('LOWER(email) = ?', email.toLowerCase())
+        .first()
+
+      if (!user || !user.password_hash) {
+        metricsService.userLoginsTotal.inc({ method: 'password', status: 'failure' })
+        metricsService.authFailuresTotal.inc({
+          auth_type: 'password',
+          reason: 'user_not_found',
+        })
+        return res
+          .status(401)
+          .json({ success: false, error: 'Invalid credentials' })
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password_hash)
+      if (!isValidPassword) {
+        metricsService.userLoginsTotal.inc({ method: 'password', status: 'failure' })
+        metricsService.authFailuresTotal.inc({
+          auth_type: 'password',
+          reason: 'invalid_password',
+        })
+        return res
+          .status(401)
+          .json({ success: false, error: 'Invalid credentials' })
+      }
+
+      if (!user.is_active) {
+        metricsService.authFailuresTotal.inc({
+          auth_type: 'password',
+          reason: 'account_disabled',
+        })
+        return res
+          .status(403)
+          .json({ success: false, error: 'Account is disabled' })
+      }
+
+      const tokens = jwtService.generateTokens(user.id, user.email, user.role)
+
+      await sessionService.createSession({
+        userId: user.id,
+        refreshTokenHash: await sessionService.hashRefreshToken(
+          tokens.refreshToken,
+        ),
+        deviceInfo: req.get('user-agent') || 'unknown',
+        ipAddress: req.ip || req.socket.remoteAddress || undefined,
+        expiresAt: sessionService.getRefreshExpiryDate(),
+      })
+
+      metricsService.userLoginsTotal.inc({ method: 'password', status: 'success' })
+      logger.info('User login successful', { userId: user.id })
+
+      res.json({
+        success: true,
+        data: {
+          user: formatUser(user),
+          tokens,
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      })
+    } catch (error) {
+      logger.error('Login failed', error as Error)
+      metricsService.appErrorsTotal.inc({
+        error_type: 'login_error',
+        service: 'backend',
+        severity: 'error',
+      })
+      res.status(500).json({
+        success: false,
+        error: 'Login failed',
+      })
     }
-
-    if (!user.is_active) {
-      return res
-        .status(403)
-        .json({ success: false, error: 'Account is disabled' })
-    }
-
-    const tokens = jwtService.generateTokens(user.id, user.email, user.role)
-
-    await sessionService.createSession({
-      userId: user.id,
-      refreshTokenHash: await sessionService.hashRefreshToken(
-        tokens.refreshToken,
-      ),
-      deviceInfo: req.get('user-agent') || 'unknown',
-      ipAddress: req.ip || req.socket.remoteAddress || undefined,
-      expiresAt: sessionService.getRefreshExpiryDate(),
-    })
-
-    res.json({
-      success: true,
-      data: {
-        user: formatUser(user),
-        tokens,
-      },
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-    })
   },
 )
 
@@ -257,9 +313,12 @@ router.post(
       .withMessage('Refresh token must be a string when provided'),
   ],
   authenticate,
-  async (req: AuthRequest, res: Response) => {
-    if (handleValidationErrors(req, res)) {return}
+  async (req: Request, res: Response) => {
+    if (handleValidationErrors(req, res)) {
+      return
+    }
 
+    const authReq = req as AuthRequest
     const { refreshToken } = req.body as { refreshToken?: string }
 
     if (refreshToken) {
@@ -267,9 +326,9 @@ router.post(
       if (session) {
         await sessionService.revokeSession(session.id, 'user_logout')
       }
-    } else if (req.user) {
+    } else if (authReq.user) {
       await sessionService.revokeAllSessionsForUser(
-        req.user.userId,
+        authReq.user.userId,
         'user_logout_all',
       )
     }

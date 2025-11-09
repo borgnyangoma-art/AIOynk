@@ -1,5 +1,11 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "7"
+
 services:
   # Database Services
   postgres:
@@ -12,6 +18,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backups:/backups
+    logging: *default-logging
     ports:
       - "5432:5432"
     healthcheck:
@@ -28,6 +35,7 @@ services:
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-aio_redis_password}
     volumes:
       - redis_data:/data
+    logging: *default-logging
     ports:
       - "6379:6379"
     healthcheck:
@@ -46,6 +54,7 @@ services:
     container_name: aio-nlp-service
     environment:
       - PORT=3006
+    logging: *default-logging
     ports:
       - "3006:3006"
     healthcheck:
@@ -75,6 +84,8 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - NLP_SERVICE_URL=${NLP_SERVICE_URL:-http://nlp-service:3006}
+    logging: *default-logging
     ports:
       - "3000:3000"
     healthcheck:
@@ -101,6 +112,7 @@ services:
     container_name: aio-graphics-service
     environment:
       - PORT=3001
+    logging: *default-logging
     ports:
       - "3001:3001"
     volumes:
@@ -120,6 +132,7 @@ services:
     container_name: aio-web-designer-service
     environment:
       - PORT=3002
+    logging: *default-logging
     ports:
       - "3002:3002"
     volumes:
@@ -139,6 +152,7 @@ services:
     container_name: aio-ide-service
     environment:
       - PORT=3003
+    logging: *default-logging
     ports:
       - "3003:3003"
     volumes:
@@ -159,6 +173,7 @@ services:
     container_name: aio-cad-service
     environment:
       - PORT=3004
+    logging: *default-logging
     ports:
       - "3004:3004"
     volumes:
@@ -178,6 +193,7 @@ services:
     container_name: aio-video-service
     environment:
       - PORT=3005
+    logging: *default-logging
     ports:
       - "3005:3005"
     volumes:
@@ -196,6 +212,7 @@ services:
       context: ./apps/frontend
       dockerfile: Dockerfile
     container_name: aio-frontend
+    logging: *default-logging
     ports:
       - "80:80"
     healthcheck:
@@ -220,6 +237,7 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--storage.tsdb.retention.time=200h'
       - '--web.enable-lifecycle'
+    logging: *default-logging
     ports:
       - "9090:9090"
     volumes:
@@ -235,6 +253,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
+    logging: *default-logging
     ports:
       - "3001:3000"
     volumes:
@@ -253,6 +272,7 @@ services:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
+    logging: *default-logging
     ports:
       - "9200:9200"
     volumes:
@@ -263,6 +283,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.11.0
     container_name: aio-kibana
+    logging: *default-logging
     ports:
       - "5601:5601"
     environment:
@@ -275,6 +296,7 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.11.0
     container_name: aio-logstash
+    logging: *default-logging
     ports:
       - "5044:5044"
     volumes:
@@ -289,6 +311,7 @@ services:
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: aio-jaeger
+    logging: *default-logging
     ports:
       - "16686:16686"
       - "14268:14268"
@@ -303,6 +326,7 @@ services:
   alertmanager:
     image: prom/alertmanager:latest
     container_name: aio-alertmanager
+    logging: *default-logging
     ports:
       - "9093:9093"
     volumes:

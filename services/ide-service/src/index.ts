@@ -1,416 +1,410 @@
-import express, { Application, Request, Response } from 'express';
-import cors from 'cors';
-import { promises as fs } from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import winston from 'winston';
-import Docker from 'dockerode';
-import esprima from 'esprima';
+import express, { Application, Request, Response } from 'express'
+import cors from 'cors'
+import { promises as fs } from 'fs'
+import path from 'path'
+import { v4 as uuidv4 } from 'uuid'
+import winston from 'winston'
+import esprima, { Program } from 'esprima'
 
-const app: Application = express();
-const PORT = process.env.PORT || 3003;
-const docker = new Docker();
+import Analyzer from './analysis'
+import DebugManager from './debugger'
+import docker from './docker'
+import { SandboxRunner } from './sandbox'
+import { CodeProject, ExecutionResult, Language } from './types'
+import { getDefaultCode, getEntryFileName, normalizeFileName } from './utils/project'
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const app: Application = express()
+const PORT = process.env.PORT || 3003
 
-// Logger
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+
 const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: 'logs/ide.log' })
-  ]
-});
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
+  transports: [new winston.transports.Console(), new winston.transports.File({ filename: 'logs/ide.log' })],
+})
 
-// Storage
-const PROJECTS_DIR = path.join(__dirname, '../../storage/ide-projects');
-const EXECUTIONS_DIR = path.join(__dirname, '../../storage/executions');
+const PROJECTS_DIR = path.join(__dirname, '../../storage/ide-projects')
+const EXECUTIONS_DIR = path.join(__dirname, '../../storage/executions')
+const LOGS_DIR = path.join(__dirname, '../logs')
 
-type CodeProject = {
-  id: string;
-  name: string;
-  language: 'python' | 'javascript' | 'java' | 'cpp' | 'typescript';
-  code: string;
-  files: Record<string, string>;
-  createdAt: Date;
-  updatedAt: Date;
-};
+const sandboxRunner = new SandboxRunner(docker, logger, EXECUTIONS_DIR)
+const analyzer = new Analyzer(sandboxRunner)
+const debugManager = new DebugManager()
 
-type ExecutionResult = {
-  id: string;
-  projectId: string;
-  status: 'running' | 'success' | 'error' | 'timeout';
-  output: string;
-  error?: string;
-  executionTime: number;
-  exitCode?: number;
-};
+const SUPPORTED_LANGUAGES: Language[] = ['python', 'javascript', 'java', 'cpp', 'typescript']
 
-const projectStore = new Map<string, CodeProject>();
-const executionStore = new Map<string, ExecutionResult>();
+const projectStore = new Map<string, CodeProject>()
+const executionStore = new Map<string, ExecutionResult>()
 
-// Ensure directories
 const ensureDirs = async () => {
-  await fs.mkdir(PROJECTS_DIR, { recursive: true });
-  await fs.mkdir(EXECUTIONS_DIR, { recursive: true });
-  await fs.mkdir(path.join(__dirname, 'logs'), { recursive: true });
-};
+  await fs.mkdir(PROJECTS_DIR, { recursive: true })
+  await fs.mkdir(EXECUTIONS_DIR, { recursive: true })
+  await fs.mkdir(LOGS_DIR, { recursive: true })
+}
 
-// Health check
-app.get('/health', (req: Request, res: Response) => {
+const getProjectOr404 = (req: Request, res: Response) => {
+  const project = projectStore.get(req.params.id)
+  if (!project) {
+    res.status(404).json({ error: 'Project not found' })
+    return null
+  }
+  return project
+}
+
+const getSessionOr404 = (sessionId: string, res: Response) => {
+  const session = debugManager.getSession(sessionId)
+  if (!session) {
+    res.status(404).json({ error: 'Debug session not found' })
+    return null
+  }
+  return session
+}
+
+app.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     service: 'ide-service',
     timestamp: new Date().toISOString(),
-    docker: !!docker
-  });
-});
+    sandboxReady: true,
+  })
+})
 
-// Create project
 app.post('/project', async (req: Request, res: Response) => {
   try {
-    const { name, language, code } = req.body;
-
-    if (!['python', 'javascript', 'java', 'cpp', 'typescript'].includes(language)) {
-      return res.status(400).json({ error: 'Unsupported language' });
+    const language = req.body.language as Language
+    if (!SUPPORTED_LANGUAGES.includes(language)) {
+      return res.status(400).json({ error: 'Unsupported language' })
     }
 
-    const projectId = uuidv4();
+    const entryFile = getEntryFileName(language)
+    const initialCode = typeof req.body.code === 'string' && req.body.code.length ? req.body.code : getDefaultCode(language)
+
     const project: CodeProject = {
-      id: projectId,
-      name: name || 'Untitled Project',
+      id: uuidv4(),
+      name: req.body.name || 'Untitled Project',
       language,
-      code: code || getDefaultCode(language),
-      files: { 'main': code || getDefaultCode(language) },
+      code: initialCode,
+      files: { [entryFile]: initialCode },
       createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    projectStore.set(projectId, project);
-
-    logger.info(`IDE project created: ${projectId} (${language})`);
-
-    res.status(201).json({
-      success: true,
-      data: project
-    });
-  } catch (error) {
-    logger.error('Error creating project:', error);
-    res.status(500).json({ error: 'Failed to create project' });
-  }
-});
-
-// Get project
-app.get('/project/:id', async (req: Request, res: Response) => {
-  try {
-    const project = projectStore.get(req.params.id);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    res.json({ success: true, data: project });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get project' });
-  }
-});
-
-// Update project
-app.put('/project/:id', async (req: Request, res: Response) => {
-  try {
-    const project = projectStore.get(req.params.id);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
+      updatedAt: new Date(),
     }
 
-    const { name, code, fileName, fileContent } = req.body;
+    projectStore.set(project.id, project)
+    logger.info(`IDE project created: ${project.id} (${language})`)
 
-    if (name !== undefined) project.name = name;
-    if (code !== undefined) {
-      project.code = code;
-      if (fileName) {
-        project.files[fileName] = code;
-      }
-    }
-    project.updatedAt = new Date();
-
-    res.json({ success: true, data: project });
+    res.status(201).json({ success: true, data: project })
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update project' });
+    logger.error('Error creating project:', error)
+    res.status(500).json({ error: 'Failed to create project' })
   }
-});
+})
 
-// Run code
+app.get('/project/:id', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+  res.json({ success: true, data: project })
+})
+
+app.put('/project/:id', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+
+  const { name, code, fileName, fileContent } = req.body as { name?: string; code?: string; fileName?: string; fileContent?: string }
+
+  if (typeof name === 'string') {
+    project.name = name
+  }
+
+  if (typeof code === 'string') {
+    project.code = code
+    project.files[getEntryFileName(project.language)] = code
+  }
+
+  if (fileName) {
+    const normalized = normalizeFileName(project.language, fileName)
+    project.files[normalized] = fileContent !== undefined ? String(fileContent) : project.code
+  }
+
+  project.updatedAt = new Date()
+  res.json({ success: true, data: project })
+})
+
+app.get('/project/:id/files', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+  res.json({ success: true, data: Object.keys(project.files) })
+})
+
+app.get('/project/:id/files/:fileName', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+
+  const fileName = normalizeFileName(project.language, req.params.fileName)
+  const contents = project.files[fileName]
+  if (contents === undefined) {
+    return res.status(404).json({ error: 'File not found' })
+  }
+
+  res.json({ success: true, data: { fileName, contents } })
+})
+
+app.post('/project/:id/files', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+
+  const { fileName, contents } = req.body as { fileName: string; contents: string }
+  if (!fileName) {
+    return res.status(400).json({ error: 'fileName is required' })
+  }
+
+  const normalized = normalizeFileName(project.language, fileName)
+  project.files[normalized] = String(contents ?? '')
+  project.updatedAt = new Date()
+
+  res.json({ success: true, data: project.files })
+})
+
+app.delete('/project/:id/files/:fileName', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+
+  const fileName = normalizeFileName(project.language, req.params.fileName)
+  delete project.files[fileName]
+  project.updatedAt = new Date()
+
+  res.status(204).send()
+})
+
 app.post('/project/:id/run', async (req: Request, res: Response) => {
-  try {
-    const project = projectStore.get(req.params.id);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
+  const project = getProjectOr404(req, res)
+  if (!project) return
 
-    const executionId = uuidv4();
-    const startTime = Date.now();
+  const executionId = uuidv4()
+  const startTime = Date.now()
 
-    const execution: ExecutionResult = {
-      id: executionId,
-      projectId: project.id,
+  const execution: ExecutionResult = {
+    id: executionId,
+    projectId: project.id,
+    status: 'running',
+    output: '',
+    executionTime: 0,
+  }
+
+  executionStore.set(executionId, execution)
+
+  res.status(202).json({
+    success: true,
+    data: {
+      executionId,
+      message: 'Execution started',
       status: 'running',
-      output: '',
-      executionTime: 0
-    };
+    },
+  })
 
-    executionStore.set(executionId, execution);
+  executeCode(project, executionId, startTime)
+})
 
-    res.status(202).json({
-      success: true,
-      data: {
-        executionId,
-        message: 'Execution started',
-        status: 'running'
-      }
-    });
-
-    // Execute in background
-    executeCode(project, executionId, startTime);
-
-  } catch (error) {
-    logger.error('Error starting execution:', error);
-    res.status(500).json({ error: 'Failed to run code' });
+app.get('/execution/:id', (req: Request, res: Response) => {
+  const execution = executionStore.get(req.params.id)
+  if (!execution) {
+    return res.status(404).json({ error: 'Execution not found' })
   }
-});
+  res.json({ success: true, data: execution })
+})
 
-// Get execution status
-app.get('/execution/:id', async (req: Request, res: Response) => {
-  try {
-    const execution = executionStore.get(req.params.id);
-    if (!execution) {
-      return res.status(404).json({ error: 'Execution not found' });
-    }
-    res.json({ success: true, data: execution });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get execution' });
+app.get('/execution/:id/output', (req: Request, res: Response) => {
+  const execution = executionStore.get(req.params.id)
+  if (!execution) {
+    return res.status(404).json({ error: 'Execution not found' })
   }
-});
 
-// Get execution output (stream)
-app.get('/execution/:id/output', async (req: Request, res: Response) => {
-  try {
-    const execution = executionStore.get(req.params.id);
-    if (!execution) {
-      return res.status(404).json({ error: 'Execution not found' });
-    }
-
-    res.write(`data: ${JSON.stringify(execution)}\n\n`);
-
-    if (execution.status === 'success' || execution.status === 'error' || execution.status === 'timeout') {
-      res.end();
-    }
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get output' });
+  res.write(`data: ${JSON.stringify(execution)}\n\n`)
+  if (['success', 'error', 'timeout'].includes(execution.status)) {
+    res.end()
   }
-});
+})
 
-// Get syntax errors
 app.post('/project/:id/syntax', async (req: Request, res: Response) => {
   try {
-    const project = projectStore.get(req.params.id);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
+    const project = getProjectOr404(req, res)
+    if (!project) return
+    const report = await analyzer.syntax(project)
+    res.json({ success: true, data: report })
+  } catch (error) {
+    logger.error('Syntax analysis failed', error)
+    res.status(500).json({ error: 'Failed to analyze syntax' })
+  }
+})
 
-    const errors: Array<{ line: number; message: string; severity: string }> = [];
+app.get('/projects', (_req: Request, res: Response) => {
+  const projects = Array.from(projectStore.values()).map((p) => ({
+    id: p.id,
+    name: p.name,
+    language: p.language,
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  }))
 
+  res.json({ success: true, data: projects })
+})
+
+app.post('/project/:id/security', (req: Request, res: Response) => {
+  try {
+    const project = getProjectOr404(req, res)
+    if (!project) return
+    const report = analyzer.scanSecurity(project)
+    res.json({ success: true, data: report })
+  } catch (error) {
+    logger.error('Security scan failed', error)
+    res.status(500).json({ error: 'Failed to scan for security issues' })
+  }
+})
+
+app.get('/project/:id/analysis', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
+
+  const lineCount = project.code.split('\n').length
+  const charCount = project.code.length
+  let functionCount = 0
+
+  if (project.language === 'javascript' || project.language === 'typescript') {
     try {
-      if (project.language === 'javascript' || project.language === 'typescript') {
-        esprima.parseScript(project.code, { loc: true, tolerant: true });
-      }
-      // For other languages, add parsers as needed
-    } catch (err: any) {
-      errors.push({
-        line: err.lineNumber || 0,
-        message: err.description || err.message,
-        severity: 'error'
-      });
+      const tree = esprima.parseScript(project.code, { tolerant: true }) as Program
+      functionCount = tree.body.filter((node) => node.type === 'FunctionDeclaration').length
+    } catch {
+      functionCount = 0
     }
-
-    res.json({
-      success: true,
-      data: {
-        valid: errors.length === 0,
-        errors,
-        lineCount: project.code.split('\n').length,
-        charCount: project.code.length
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to check syntax' });
   }
-});
 
-// List projects
-app.get('/projects', async (req: Request, res: Response) => {
-  try {
-    const projects = Array.from(projectStore.values()).map(p => ({
-      id: p.id,
-      name: p.name,
-      language: p.language,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt
-    }));
+  res.json({
+    success: true,
+    data: {
+      lineCount,
+      charCount,
+      functionCount,
+      files: Object.keys(project.files).length,
+      language: project.language,
+    },
+  })
+})
 
-    res.json({ success: true, data: projects });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to list projects' });
+app.post('/project/:id/template', (req: Request, res: Response) => {
+  const { language } = req.body as { language: Language }
+  if (!language || !SUPPORTED_LANGUAGES.includes(language)) {
+    return res.status(400).json({ error: 'language is required' })
   }
-});
 
-// Security scan
-app.post('/project/:id/security', async (req: Request, res: Response) => {
-  try {
-    const project = projectStore.get(req.params.id);
-    if (!project) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
+  res.json({ success: true, data: { language, code: getDefaultCode(language) } })
+})
 
-    const vulnerabilities: string[] = [];
+app.post('/project/:id/debug/session', (req: Request, res: Response) => {
+  const project = getProjectOr404(req, res)
+  if (!project) return
 
-    // Check for dangerous patterns
-    if (project.code.includes('eval(')) {
-      vulnerabilities.push('Use of eval() - can lead to code injection');
-    }
-    if (project.code.includes('exec(')) {
-      vulnerabilities.push('Use of exec() - can execute arbitrary code');
-    }
-    if (project.code.includes('subprocess.call') && project.language === 'python') {
-      vulnerabilities.push('subprocess.call without proper sanitization');
-    }
-    if (project.code.includes('shell=True')) {
-      vulnerabilities.push('shell=True can lead to command injection');
-    }
-    if (project.code.match(/process\.exit\(/)) {
-      vulnerabilities.push('process.exit() can terminate the application unexpectedly');
-    }
+  const breakpoints = Array.isArray(req.body.breakpoints) ? req.body.breakpoints : []
+  const session = debugManager.createSession(project.id, breakpoints)
+  res.status(201).json({ success: true, data: session })
+})
 
-    const recommendations = [
-      'Avoid using eval() and exec()',
-      'Sanitize all user inputs',
-      'Use parameterized queries for database access',
-      'Implement proper error handling',
-      'Validate file paths to prevent directory traversal',
-      'Use least-privilege principle for file system access',
-      'Enable CORS properly',
-      'Implement rate limiting'
-    ];
+app.post('/debug/:id/breakpoints', (req: Request, res: Response) => {
+  const session = getSessionOr404(req.params.id, res)
+  if (!session) return
 
-    res.json({
-      success: true,
-      data: {
-        vulnerabilities: vulnerabilities.length,
-        vulnerable: vulnerabilities.length > 0,
-        issues: vulnerabilities,
-        recommendations
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to scan for security issues' });
+  if (!Array.isArray(req.body.breakpoints)) {
+    return res.status(400).json({ error: 'breakpoints must be an array' })
   }
-});
 
-// Helper functions
-function getDefaultCode(language: string): string {
-  switch (language) {
-    case 'python':
-      return `print("Hello, World!")`;
-    case 'javascript':
-      return `console.log("Hello, World!");`;
-    case 'java':
-      return `public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
-    }
-}`;
-    case 'cpp':
-      return `#include <iostream>
+  const updated = debugManager.updateBreakpoints(session.id, session.projectId, req.body.breakpoints)
+  res.json({ success: true, data: updated })
+})
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
-}`;
-    case 'typescript':
-      return `console.log("Hello, World!");`;
-    default:
-      return '';
+app.post('/debug/:id/run', (req: Request, res: Response) => {
+  const session = getSessionOr404(req.params.id, res)
+  if (!session) return
+  const project = projectStore.get(session.projectId)
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' })
   }
-}
 
-async function executeCode(project: CodeProject, executionId: string, startTime: number) {
-  const execution = executionStore.get(executionId);
-  if (!execution) return;
+  const updated = debugManager.run(session.id, project)
+  res.json({ success: true, data: updated })
+})
+
+app.post('/debug/:id/step', (req: Request, res: Response) => {
+  const session = getSessionOr404(req.params.id, res)
+  if (!session) return
+  const project = projectStore.get(session.projectId)
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' })
+  }
+
+  const updated = debugManager.step(session.id, project)
+  res.json({ success: true, data: updated })
+})
+
+app.get('/debug/:id', (req: Request, res: Response) => {
+  const session = getSessionOr404(req.params.id, res)
+  if (!session) return
+  res.json({ success: true, data: session })
+})
+
+app.get('/debug/:id/variables', (req: Request, res: Response) => {
+  const session = getSessionOr404(req.params.id, res)
+  if (!session) return
+  const project = projectStore.get(session.projectId)
+  if (!project) {
+    return res.status(404).json({ error: 'Project not found' })
+  }
+
+  const variables = debugManager.inspectVariables(session.id, project)
+  res.json({ success: true, data: variables })
+})
+
+const executeCode = async (project: CodeProject, executionId: string, startTime: number) => {
+  const execution = executionStore.get(executionId)
+  if (!execution) return
 
   try {
-    // Simulate code execution
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    let output = '';
-    let exitCode = 0;
-
-    // Simulated execution based on language
-    if (project.language === 'python') {
-      output = 'Hello, World!\n';
-    } else if (project.language === 'javascript') {
-      output = 'Hello, World!\n';
-    } else if (project.language === 'java') {
-      output = 'Hello, World!\n';
-    } else if (project.language === 'cpp') {
-      output = 'Hello, World!\n';
-    } else {
-      output = 'Code executed\n';
-    }
-
-    const executionTime = Date.now() - startTime;
-
-    execution.status = exitCode === 0 ? 'success' : 'error';
-    execution.output = output;
-    execution.executionTime = executionTime;
-    execution.exitCode = exitCode;
-
-    logger.info(`Code executed: ${executionId} in ${executionTime}ms`);
-
+    const result = await sandboxRunner.run(project, executionId)
+    execution.exitCode = result.exitCode
+    execution.output = result.stdout
+    execution.error = result.stderr || (result.timedOut ? 'Execution timed out' : undefined)
+    execution.status = result.timedOut ? 'timeout' : result.exitCode === 0 ? 'success' : 'error'
+    execution.executionTime = Date.now() - startTime
+    logger.info(`Code executed: ${executionId} status=${execution.status}`)
   } catch (error: any) {
-    execution.status = 'error';
-    execution.error = error.message;
-    execution.executionTime = Date.now() - startTime;
-
-    logger.error(`Execution failed: ${executionId}`, error);
+    execution.status = 'error'
+    execution.error = error?.message || 'Execution failed'
+    execution.executionTime = Date.now() - startTime
+    logger.error(`Execution failed: ${executionId}`, error)
   }
 }
 
-// Error handlers
-app.use((err: any, req: Request, res: Response, next: any) => {
-  logger.error('Error:', err);
-  res.status(500).json({ error: err.message });
-});
+app.use((err: any, _req: Request, res: Response, _next: any) => {
+  logger.error('Error:', err)
+  res.status(500).json({ error: err.message || 'Internal server error' })
+})
 
-app.use('*', (req: Request, res: Response) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+app.use('*', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Route not found' })
+})
 
-// Start server
-const start = async () => {
-  await ensureDirs();
-  app.listen(PORT, () => {
-    logger.info(`💻 IDE Service running on port ${PORT}`);
-  });
-};
+export const start = async () => {
+  await ensureDirs()
+  return app.listen(PORT, () => {
+    logger.info(`💻 IDE Service running on port ${PORT}`)
+  })
+}
 
-start().catch(error => {
-  logger.error('Failed to start:', error);
-  process.exit(1);
-});
+if (process.env.NODE_ENV !== 'test') {
+  start().catch((error) => {
+    logger.error('Failed to start:', error)
+    process.exit(1)
+  })
+}
 
-export default app;
+export default app

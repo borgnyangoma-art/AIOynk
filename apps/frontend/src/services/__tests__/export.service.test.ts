@@ -1,58 +1,82 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { Provider } from 'react-redux';
-import { store } from '../../store/store';
-import { exportAsJSON, exportAsText, exportAsImage, exportMultipleAsZip } from '../../services/export.service';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-vi.mock('../../services/export.service', () => ({
-  exportAsJSON: vi.fn(),
-  exportAsText: vi.fn(),
-  exportAsImage: vi.fn(),
-  exportMultipleAsZip: vi.fn(),
-}));
+import {
+  exportAsJSON,
+  exportAsText,
+  exportAsImage,
+  exportMultipleAsZip,
+} from '../export.service'
 
-describe('Export Service', () => {
-  const mockData = { test: 'data' };
+vi.mock('jszip', () => {
+  class MockZip {
+    private files: Record<string, string | Blob> = {}
 
-  it('exports data as JSON', async () => {
-    await exportAsJSON(mockData, 'test.json');
+    folder() {
+      return this
+    }
 
-    expect(exportAsJSON).toHaveBeenCalledWith(mockData, 'test.json');
-  });
+    file(name: string, content: string | Blob) {
+      this.files[name] = content
+      return this
+    }
 
-  it('exports data as text', async () => {
-    await exportAsText('test content', 'test.txt');
+    async generateAsync() {
+      return new Blob(['mock-zip'])
+    }
+  }
+  return { default: MockZip }
+})
 
-    expect(exportAsText).toHaveBeenCalledWith('test content', 'test.txt');
-  });
+describe('export.service', () => {
+  let anchor: HTMLAnchorElement
+  let createElementSpy: ReturnType<typeof vi.spyOn>
+  let clickSpy: ReturnType<typeof vi.spyOn>
 
-  it('exports data as image', async () => {
-    const mockBlob = new Blob(['test'], { type: 'image/png' });
-    const mockUrl = 'blob:test-url';
+  beforeEach(() => {
+    anchor = document.createElement('a')
+    clickSpy = vi.spyOn(anchor, 'click').mockImplementation(() => {})
+    createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(anchor)
+    global.URL.createObjectURL = vi.fn().mockReturnValue('blob:mock')
+    global.URL.revokeObjectURL = vi.fn()
+  })
 
-    global.URL.createObjectURL = vi.fn().mockReturnValue(mockUrl);
-    global.URL.revokeObjectURL = vi.fn();
+  afterEach(() => {
+    clickSpy.mockRestore()
+    createElementSpy.mockRestore()
+  })
 
-    const link = { click: vi.fn() };
-    const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(link as any);
+  it('exports data as JSON', () => {
+    exportAsJSON({ foo: 'bar' }, 'export')
 
-    await exportAsImage(mockBlob, 'test.png');
+    expect(createElementSpy).toHaveBeenCalledWith('a')
+    expect(anchor.download).toBe('export.json')
+    expect(clickSpy).toHaveBeenCalled()
+  })
 
-    expect(createElementSpy).toHaveBeenCalledWith('a');
-    expect(link.download).toBe('test.png');
-    expect(link.click).toHaveBeenCalled();
+  it('exports data as text', () => {
+    exportAsText('content', 'note.txt')
 
-    createElementSpy.mockRestore();
-  });
+    expect(anchor.download).toBe('note.txt')
+    expect(clickSpy).toHaveBeenCalled()
+  })
 
-  it('exports multiple files as ZIP', async () => {
-    const mockFiles = [
-      { data: 'file1', name: 'file1.txt' },
-      { data: 'file2', name: 'file2.txt' },
-    ];
+  it('exports image data URLs', () => {
+    exportAsImage('data:image/png;base64,abc', 'canvas', 'png')
 
-    await exportMultipleAsZip(mockFiles, 'archive.zip');
+    expect(anchor.download).toBe('canvas.png')
+    expect(clickSpy).toHaveBeenCalled()
+  })
 
-    expect(exportMultipleAsZip).toHaveBeenCalledWith(mockFiles, 'archive.zip');
-  });
-});
+  it('exports multiple files as zip', async () => {
+    await exportMultipleAsZip(
+      [
+        { name: 'a.txt', content: 'hello', type: 'text/plain' },
+        { name: 'b.txt', content: 'world', type: 'text/plain' },
+      ],
+      'archive',
+    )
+
+    expect(anchor.download).toBe('archive.zip')
+    expect(clickSpy).toHaveBeenCalled()
+  })
+})

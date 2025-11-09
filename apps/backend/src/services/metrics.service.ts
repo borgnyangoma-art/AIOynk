@@ -9,8 +9,17 @@ register.setDefaultLabels({
   version: process.env.npm_package_version || '1.0.0',
 });
 
-// Enable collection of default metrics
-client.collectDefaultMetrics({ register });
+let defaultMetricsInitialized = false;
+
+const ensureDefaultMetrics = () => {
+  if (!defaultMetricsInitialized) {
+    client.collectDefaultMetrics({ register });
+    defaultMetricsInitialized = true;
+  }
+};
+
+// Enable collection of default metrics on first import
+ensureDefaultMetrics();
 
 // ====================
 // HTTP Request Metrics
@@ -455,6 +464,10 @@ export const getRegistry = () => {
   return register;
 };
 
+export const initialize = async () => {
+  ensureDefaultMetrics();
+};
+
 export default {
   recordHttpRequest,
   recordDbQuery,
@@ -485,7 +498,10 @@ export default {
   authFailuresTotal,
   securityEventsTotal,
   appErrorsTotal,
+  contextOperationsTotal,
+  contextSizeBytes,
   endpointResponseTimeSeconds,
   processCpuUsagePercent,
   processMemoryUsageBytes,
+  initialize,
 };

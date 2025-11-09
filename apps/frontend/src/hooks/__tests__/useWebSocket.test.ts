@@ -1,82 +1,119 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import useWebSocket from '../useWebSocket';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { renderHook, act, waitFor } from '@testing-library/react'
+
+import useWebSocket from '../useWebSocket'
+
+class MockWebSocket {
+  static OPEN = 1
+  static CLOSED = 3
+  static lastInstance: MockWebSocket | null = null
+
+  public readyState = MockWebSocket.OPEN
+  public sentMessages: string[] = []
+  public onopen: ((event: Event) => void) | null = null
+  public onclose: ((event: CloseEvent) => void) | null = null
+  public onmessage: ((event: MessageEvent) => void) | null = null
+  public onerror: ((event: Event) => void) | null = null
+
+  constructor(public url: string) {
+    if (url === 'invalid-url') {
+      throw new Error('Invalid URL')
+    }
+    MockWebSocket.lastInstance = this
+  }
+
+  simulateOpen() {
+    this.onopen?.({} as Event)
+  }
+
+  simulateMessage(data: string) {
+    this.onmessage?.({ data } as MessageEvent)
+  }
+
+  close() {
+    this.readyState = MockWebSocket.CLOSED
+    this.onclose?.({} as CloseEvent)
+  }
+
+  send(message: string) {
+    this.sentMessages.push(message)
+  }
+}
 
 describe('useWebSocket', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-  });
+    vi.stubGlobal('WebSocket', MockWebSocket as unknown as typeof WebSocket)
+    MockWebSocket.lastInstance = null
+  })
 
-  it('should connect to WebSocket', () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'));
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
 
-    expect(result.current.isConnected).toBe(false);
-  });
-
-  it('should handle connection', async () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'));
-
-    act(() => {
-      result.current.connect();
-    });
-
-    expect(result.current.isConnected).toBe(true);
-  });
-
-  it('should send messages', async () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'));
+  it('connects to a WebSocket server', async () => {
+    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'))
 
     act(() => {
-      result.current.connect();
-    });
+      result.current.connect()
+      MockWebSocket.lastInstance?.simulateOpen()
+    })
+
+    await waitFor(() => expect(result.current.isConnected).toBe(true))
+  })
+
+  it('sends messages when connected', async () => {
+    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'))
 
     act(() => {
-      result.current.send('test message');
-    });
-
-    // Message should be sent
-    expect(result.current.send).toBeDefined();
-  });
-
-  it('should handle incoming messages', async () => {
-    const onMessage = vi.fn();
-    const { result } = renderHook(() => useWebSocket('ws://localhost:3000', onMessage));
+      result.current.connect()
+      MockWebSocket.lastInstance?.simulateOpen()
+    })
 
     act(() => {
-      result.current.connect();
-    });
+      result.current.send('ping')
+    })
 
-    // Simulate incoming message
-    act(() => {
-      // This would be triggered by the WebSocket mock
-    });
+    expect(MockWebSocket.lastInstance?.sentMessages).toContain('ping')
+  })
 
-    expect(onMessage).toBeDefined();
-  });
-
-  it('should disconnect', () => {
-    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'));
+  it('invokes message handler for incoming messages', async () => {
+    const onMessage = vi.fn()
+    const { result } = renderHook(() => useWebSocket('ws://localhost:3000', onMessage))
 
     act(() => {
-      result.current.connect();
-    });
+      result.current.connect()
+      MockWebSocket.lastInstance?.simulateOpen()
+      MockWebSocket.lastInstance?.simulateMessage('hello')
+    })
 
-    expect(result.current.isConnected).toBe(true);
+    await waitFor(() => expect(onMessage).toHaveBeenCalledWith('hello'))
+  })
 
-    act(() => {
-      result.current.disconnect();
-    });
-
-    expect(result.current.isConnected).toBe(false);
-  });
-
-  it('should handle connection errors', () => {
-    const { result } = renderHook(() => useWebSocket('invalid-url'));
+  it('disconnects gracefully', async () => {
+    const { result } = renderHook(() => useWebSocket('ws://localhost:3000'))
 
     act(() => {
-      result.current.connect();
-    });
+      result.current.connect()
+      MockWebSocket.lastInstance?.simulateOpen()
+    })
 
-    expect(result.current.error).toBeDefined();
-  });
-});
+    await waitFor(() => expect(result.current.isConnected).toBe(true))
+
+    act(() => {
+      result.current.disconnect()
+    })
+
+    expect(result.current.isConnected).toBe(false)
+    expect(MockWebSocket.lastInstance?.readyState).toBe(MockWebSocket.CLOSED)
+  })
+
+  it('captures connection errors', () => {
+    const { result } = renderHook(() => useWebSocket('invalid-url'))
+
+    act(() => {
+      result.current.connect()
+    })
+
+    expect(result.current.error).toBeInstanceOf(Error)
+  })
+})

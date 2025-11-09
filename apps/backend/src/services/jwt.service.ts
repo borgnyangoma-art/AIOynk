@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, VerifyOptions, Secret } from 'jsonwebtoken';
 import config from '../utils/config';
 import { AuthTokens } from '@aio/shared';
 
 export class JWTService {
-  private privateKey: string;
-  private publicKey: string;
+  private privateKey: Secret;
+  private publicKey: Secret;
 
   constructor() {
     this.privateKey = config.JWT_PRIVATE_KEY;
@@ -17,22 +17,21 @@ export class JWTService {
     }
   }
 
-  generateAccessToken(payload: any): string {
-    return jwt.sign(payload, this.privateKey, {
+  private buildSignOptions(expiresIn: string): SignOptions {
+    return {
       algorithm: 'RS256',
-      expiresIn: config.JWT_EXPIRATION,
+      expiresIn: expiresIn as SignOptions['expiresIn'],
       issuer: config.JWT_ISSUER,
       audience: config.JWT_AUDIENCE,
-    });
+    };
+  }
+
+  generateAccessToken(payload: any): string {
+    return jwt.sign(payload, this.privateKey, this.buildSignOptions(config.JWT_EXPIRATION));
   }
 
   generateRefreshToken(payload: any): string {
-    return jwt.sign(payload, this.privateKey, {
-      algorithm: 'RS256',
-      expiresIn: config.REFRESH_TOKEN_EXPIRATION,
-      issuer: config.JWT_ISSUER,
-      audience: config.JWT_AUDIENCE,
-    });
+    return jwt.sign(payload, this.privateKey, this.buildSignOptions(config.REFRESH_TOKEN_EXPIRATION));
   }
 
   generateTokens(userId: string, email: string, role?: string): AuthTokens {
@@ -55,7 +54,7 @@ export class JWTService {
         algorithms: ['RS256'],
         issuer: config.JWT_ISSUER,
         audience: config.JWT_AUDIENCE,
-      });
+      } as VerifyOptions);
     } catch (error) {
       throw new Error('Invalid or expired token');
     }
@@ -67,7 +66,7 @@ export class JWTService {
         algorithms: ['RS256'],
         issuer: config.JWT_ISSUER,
         audience: config.JWT_AUDIENCE,
-      });
+      } as VerifyOptions);
     } catch (error) {
       throw new Error('Invalid or expired refresh token');
     }

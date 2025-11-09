@@ -1,7 +1,10 @@
 import rateLimit, { Options, Store } from 'express-rate-limit'
 
 import redisService from '../services/redis.service'
+import metricsService from '../services/metrics.service'
+import logger from '../services/logger.service'
 import config from '../utils/config'
+import type { AuthRequest } from './auth.middleware'
 
 class RedisRateLimitStore implements Store {
   private readonly prefix = 'rate-limit'
@@ -62,6 +65,25 @@ const rateLimitMiddleware = rateLimit({
   },
   keyGenerator: (req) =>
     (req.ip || req.headers['x-forwarded-for']?.toString() || 'global').toString(),
+  handler: (req, res) => {
+    metricsService.rateLimitViolationsTotal.inc({
+      endpoint: req.path,
+      user_type: (req as AuthRequest)?.user?.role || 'anonymous',
+    })
+    metricsService.securityEventsTotal.inc({
+      event_type: 'rate_limit',
+      severity: 'warning',
+    })
+    logger.warn('Rate limit exceeded', {
+      path: req.path,
+      ip: req.ip,
+      userId: (req as AuthRequest)?.user?.userId,
+    })
+    res.status(429).json({
+      success: false,
+      error: 'Too many requests, please try again later.',
+    })
+  },
   store: new RedisRateLimitStore({}, windowMs),
 })
 

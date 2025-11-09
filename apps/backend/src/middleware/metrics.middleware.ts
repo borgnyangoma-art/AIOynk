@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import metricsService from '../services/metrics.service';
+import slaMonitor from '../services/slaMonitor.service';
 
 interface ResponseWithTiming extends Response {
   startTime?: number;
@@ -117,10 +118,14 @@ export const dbMetricsMiddleware = {
  */
 export const performanceMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const startTime = process.hrtime.bigint();
+  const slaSnapshot = slaMonitor.getSnapshot();
+  res.setHeader('X-SLA-Target', 'p95<=5000ms');
+  res.setHeader('X-SLA-Status', slaSnapshot.compliant ? 'ok' : 'degraded');
 
   res.on('finish', () => {
     const endTime = process.hrtime.bigint();
     const duration = Number(endTime - startTime) / 1000000; // Convert to milliseconds
+    slaMonitor.record(duration, req.path, req.method);
 
     // Update process metrics periodically
     if (Math.random() < 0.1) { // Update 10% of the time to reduce overhead

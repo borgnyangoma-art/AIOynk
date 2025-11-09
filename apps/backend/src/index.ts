@@ -22,9 +22,9 @@ import config from './utils/config'
 import database from './utils/database'
 
 // Import middleware
-import { authenticate } from './middleware/auth.middleware'
+import { authenticate, authorize } from './middleware/auth.middleware'
 import corsMiddleware from './middleware/cors.middleware'
-import metricsMiddleware from './middleware/metrics.middleware'
+import metricsMiddleware, { performanceMiddleware } from './middleware/metrics.middleware'
 import rateLimitMiddleware from './middleware/rateLimit.middleware'
 import tracingMiddleware from './middleware/tracing.middleware'
 
@@ -32,6 +32,7 @@ import tracingMiddleware from './middleware/tracing.middleware'
 import authRoutes from './routes/auth.routes'
 import conversationRoutes from './routes/conversation.routes'
 import oauthRoutes from './routes/oauth.routes'
+import cacheRoutes from './routes/cache.routes'
 
 // Import services
 import contextService, { ConversationMessage } from './services/context.service'
@@ -253,6 +254,7 @@ app.use(tracingMiddleware)
 
 // Metrics collection
 app.use(metricsMiddleware)
+app.use(performanceMiddleware)
 
 // Health check endpoint (no auth required)
 app.get('/health', (req: Request, res: Response) => {
@@ -280,6 +282,7 @@ app.use('/api/auth', oauthRoutes)
 
 // Conversation routes (auth required)
 app.use('/api/conversations', authenticate, conversationRoutes)
+app.use('/api/cache', authenticate, authorize('admin'), cacheRoutes)
 
 // 404 handler
 app.use('*', (req: Request, res: Response) => {

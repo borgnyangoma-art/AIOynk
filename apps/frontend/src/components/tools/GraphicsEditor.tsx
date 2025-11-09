@@ -137,6 +137,7 @@ const GraphicsEditor: React.FC = () => {
   return (
     <div className="h-full flex flex-col">
       <div
+        data-testid="graphics-toolbar"
         className={`${isMobile ? 'p-2' : 'p-4'} border-b border-gray-200 bg-white flex items-center justify-between`}
       >
         <div className="flex items-center gap-2">
@@ -171,6 +172,7 @@ const GraphicsEditor: React.FC = () => {
         >
           {tools.map((tool) => (
             <button
+              data-testid={`tool-${tool.id}`}
               key={tool.id}
               onClick={() => {
                 setSelectedTool(tool.id)
@@ -202,8 +204,8 @@ const GraphicsEditor: React.FC = () => {
         </div>
 
         <div className="flex-1 flex items-center justify-center bg-gray-50 overflow-auto">
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <canvas ref={canvasRef} />
+          <div className="bg-white p-4 rounded-lg shadow-lg" data-testid="graphics-canvas-container">
+            <canvas ref={canvasRef} data-testid="graphics-canvas" />
           </div>
         </div>
 
@@ -211,14 +213,16 @@ const GraphicsEditor: React.FC = () => {
           <div className="w-64 bg-white border-l border-gray-200 p-4">
             <h3 className="font-semibold mb-4">Properties</h3>
             <div className="space-y-4">
-              <button
-                onClick={exportAsPNG}
-                className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            <button
+              data-testid="export-png"
+              onClick={exportAsPNG}
+              className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 <Download size={16} />
                 Export as PNG
               </button>
               <button
+                data-testid="export-json"
                 onClick={exportAsJSON}
                 className="w-full flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >

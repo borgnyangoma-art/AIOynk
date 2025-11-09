@@ -2,23 +2,32 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { Eye, X, Maximize2, Minimize2, RotateCcw, Download } from 'lucide-react'
+import ResponsiveImage from '../common/ResponsiveImage'
+import { PREVIEW_PLACEHOLDER_1X, PREVIEW_PLACEHOLDER_2X } from '../../assets/responsivePlaceholders'
+
+const PREVIEW_SOURCES = [
+  { srcSet: `${PREVIEW_PLACEHOLDER_1X} 1x`, media: '(max-width: 768px)', type: 'image/svg+xml' },
+  { srcSet: `${PREVIEW_PLACEHOLDER_2X} 2x`, media: '(min-width: 769px)', type: 'image/svg+xml' },
+]
 
 interface PreviewPanelProps {
   isOpen: boolean
   onClose: () => void
   isMobile?: boolean
+  autoRefreshInitial?: boolean
 }
 
 const PreviewPanel: React.FC<PreviewPanelProps> = ({
   isOpen,
   onClose,
   isMobile = false,
+  autoRefreshInitial = true,
 }) => {
   const { currentTool, contexts } = useSelector(
     (state: RootState) => state.tool
   )
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [autoRefresh, setAutoRefresh] = useState(true)
+  const [autoRefresh, setAutoRefresh] = useState(autoRefreshInitial)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -48,7 +57,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         <div className="flex items-center justify-center h-full text-gray-400">
           <div className="text-center">
             <Eye size={48} className="mx-auto mb-4 opacity-50" />
-            <p>Select a tool to see preview</p>
+            <p data-testid="preview-empty">Select a tool to see preview</p>
           </div>
         </div>
       )
@@ -59,10 +68,17 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
     switch (currentTool.id) {
       case 'graphics':
         return (
-          <div className="h-full flex items-center justify-center bg-gray-900">
+          <div className="h-full flex items-center justify-center bg-gray-900" data-testid="preview-graphics">
             <div className="text-center text-white">
-              <div className="w-64 h-48 bg-white rounded-lg mb-4 flex items-center justify-center">
-                <span className="text-gray-400">Graphics Preview</span>
+              <div className="w-64 h-48 mb-4 overflow-hidden rounded-lg">
+                <ResponsiveImage
+                  alt="Graphics preview"
+                  fallbackSrc={PREVIEW_PLACEHOLDER_1X}
+                  sources={PREVIEW_SOURCES}
+                  className="h-full w-full"
+                  width={400}
+                  height={240}
+                />
               </div>
               <p className="text-sm">
                 Canvas: {context?.canvasData ? 'Active' : 'Empty'}
@@ -88,7 +104,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
                   {context.css && <style>{context.css}</style>}
                 </div>
               ) : (
-                <div className="text-center text-gray-400 py-16">
+                <div className="text-center text-gray-400 py-16" data-testid="preview-web-empty">
                   <p>No web design yet</p>
                   <p className="text-sm mt-2">
                     Create something to see preview
@@ -142,11 +158,18 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
       case 'video':
         return (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col" data-testid="preview-video">
             <div className="flex-1 bg-black flex items-center justify-center">
               <div className="text-center text-white">
-                <div className="w-96 h-56 bg-gray-800 rounded-lg mb-4 flex items-center justify-center">
-                  <span className="text-6xl">🎬</span>
+                <div className="w-96 h-56 mb-4 overflow-hidden rounded-lg">
+                <ResponsiveImage
+                  alt="Video preview"
+                  fallbackSrc={PREVIEW_PLACEHOLDER_1X}
+                  sources={PREVIEW_SOURCES}
+                    className="h-full w-full"
+                    width={400}
+                    height={240}
+                  />
                 </div>
                 <p className="text-sm">Video Preview</p>
                 <p className="text-xs text-gray-400 mt-2">
@@ -172,6 +195,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
 
   return (
     <div
+      data-testid="preview-panel"
       className={`fixed bg-white shadow-2xl z-50 transition-all ${
         isFullscreen || isMobile
           ? 'inset-0'

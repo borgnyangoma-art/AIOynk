@@ -34,4 +34,8 @@ export default {
   CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
   LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+
+  NLP_SERVICE_URL: process.env.NLP_SERVICE_URL || '',
+  NLP_SERVICE_TIMEOUT_MS: parseInt(process.env.NLP_SERVICE_TIMEOUT_MS || '4000', 10),
+  NLP_CONFIDENCE_THRESHOLD: parseFloat(process.env.NLP_CONFIDENCE_THRESHOLD || '0.7'),
 };

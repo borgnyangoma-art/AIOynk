@@ -7,6 +7,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    browser: {
+      enabled: false,
+    },
     setupFiles: './src/setupTests.ts',
     css: true,
     coverage: {

@@ -163,6 +163,15 @@ describe('ChatInterface', () => {
     expect(screen.getByTestId('char-limit-error')).toBeInTheDocument();
   });
 
+  it('shows token estimate for current message', () => {
+    renderWithProviders(<ChatInterface />);
+
+    const messageInput = screen.getByTestId('message-input');
+    fireEvent.change(messageInput, { target: { value: 'a'.repeat(40) } });
+
+    expect(screen.getByTestId('token-estimate')).toHaveTextContent('~10 tokens');
+  });
+
   it('maintains scroll position with new messages', async () => {
     renderWithProviders(<ChatInterface />);
 
@@ -195,5 +204,49 @@ describe('ChatInterface', () => {
 
     // Should show connection status indicator
     expect(screen.getByTestId('connection-status')).toBeInTheDocument();
+  });
+
+  it('shows quick suggestions and allows selection', () => {
+    renderWithProviders(<ChatInterface />);
+
+    const suggestions = screen.getAllByTestId('suggestion-option');
+    expect(suggestions.length).toBeGreaterThan(0);
+
+    fireEvent.mouseDown(suggestions[0]);
+    const messageInput = screen.getByTestId('message-input') as HTMLInputElement;
+    expect(messageInput.value.length).toBeGreaterThan(0);
+  });
+
+  it('navigates message history with arrow keys', async () => {
+    renderWithProviders(<ChatInterface />);
+
+    const messageInput = screen.getByTestId('message-input');
+    const sendButton = screen.getByTestId('send-button');
+
+    fireEvent.change(messageInput, { target: { value: 'First' } });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(messageInput).toHaveValue('');
+    });
+
+    fireEvent.change(messageInput, { target: { value: 'Second' } });
+    fireEvent.click(sendButton);
+
+    await waitFor(() => {
+      expect(messageInput).toHaveValue('');
+    });
+
+    fireEvent.keyDown(messageInput, { key: 'ArrowUp', code: 'ArrowUp' });
+    expect(messageInput).toHaveValue('Second');
+
+    fireEvent.keyDown(messageInput, { key: 'ArrowUp', code: 'ArrowUp' });
+    expect(messageInput).toHaveValue('First');
+
+    fireEvent.keyDown(messageInput, { key: 'ArrowDown', code: 'ArrowDown' });
+    expect(messageInput).toHaveValue('Second');
+
+    fireEvent.keyDown(messageInput, { key: 'ArrowDown', code: 'ArrowDown' });
+    expect(messageInput).toHaveValue('');
   });
 });

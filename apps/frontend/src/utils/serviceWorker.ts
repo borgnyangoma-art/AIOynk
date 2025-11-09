@@ -7,13 +7,14 @@ const isLocalhost = Boolean(
       /^127(?:\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)){3}$/
     )
 );
+const PUBLIC_URL =
+  (typeof import.meta !== 'undefined' && (import.meta as ImportMeta).env?.BASE_URL) ||
+  (typeof process !== 'undefined' && (process as any)?.env?.PUBLIC_URL) ||
+  '/';
 
 export function registerSW() {
   if ('serviceWorker' in navigator) {
-    const publicUrl = new URL(
-      process.env.PUBLIC_URL || '',
-      window.location.href
-    );
+    const publicUrl = new URL(PUBLIC_URL, window.location.href);
     if (publicUrl.origin !== window.location.origin) {
       return;
     }

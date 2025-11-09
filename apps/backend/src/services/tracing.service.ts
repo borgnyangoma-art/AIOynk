@@ -101,8 +101,13 @@ export const finishSpan = (span: any, error?: Error) => {
   span.finish();
 };
 
+export const initialize = async () => {
+  initializeTracer();
+};
+
 export default {
   initializeTracer,
+  initialize,
   getTracer,
   createSpan,
   extractSpanContext,

@@ -56,6 +56,7 @@ services:
       - PORT=3000
       - DATABASE_URL=postgresql://aio:aio_password@postgres:5432/aio_dev
       - REDIS_URL=redis://redis:6379/0
+      - NLP_SERVICE_URL=http://nlp-service:3006
     ports:
       - "3000:3000"
     volumes:

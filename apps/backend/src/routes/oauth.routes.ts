@@ -11,6 +11,8 @@ import jwtService from '../services/jwt.service';
 import sessionService from '../services/session.service';
 import { body, validationResult } from 'express-validator';
 import config from '../utils/config';
+import logger from '../services/logger.service';
+import metricsService from '../services/metrics.service';
 
 const router = Router();
 
@@ -101,6 +103,10 @@ router.get('/google/callback',
         refreshToken: (req as any).refreshToken,
       });
 
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'success' });
+      metricsService.userLoginsTotal.inc({ method: 'google_oauth', status: 'success' });
+      logger.info('Google OAuth login successful', { userId: user.id });
+
       // Redirect to frontend with tokens
       const redirectUrl = new URL(`${config.FRONTEND_URL}/auth/callback`);
       redirectUrl.searchParams.set('accessToken', tokens.accessToken);
@@ -109,7 +115,9 @@ router.get('/google/callback',
 
       res.redirect(redirectUrl.toString());
     } catch (error) {
-      console.error('OAuth callback error:', error);
+      logger.error('OAuth callback error', error as Error);
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'failure' });
+      metricsService.authFailuresTotal.inc({ auth_type: 'google_oauth', reason: 'callback_error' });
       res.redirect(`${config.FRONTEND_URL}/login?error=token_generation_failed`);
     }
   }
@@ -171,6 +179,7 @@ router.post('/oauth/refresh',
         expiresAt: sessionService.getRefreshExpiryDate(),
       });
 
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'refresh' });
       res.json({
         success: true,
         data: {
@@ -181,7 +190,8 @@ router.post('/oauth/refresh',
         },
       });
     } catch (error) {
-      console.error('Token refresh error:', error);
+      logger.error('OAuth token refresh error', error as Error);
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'failure' });
       res.status(401).json({
         success: false,
         error: 'Token refresh failed',
@@ -221,12 +231,14 @@ router.post('/oauth/revoke',
       // Revoke Google tokens
       await googleAuthService.revokeGoogleTokens(decoded.userId);
 
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'revoked' });
       res.json({
         success: true,
         message: 'Tokens revoked successfully',
       });
     } catch (error) {
-      console.error('Token revocation error:', error);
+      logger.error('OAuth token revocation error', error as Error);
+      metricsService.oauthAuthenticationsTotal.inc({ provider: 'google', status: 'failure' });
       res.status(500).json({
         success: false,
         error: 'Token revocation failed',
@@ -254,6 +266,7 @@ router.get('/oauth/status', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
+    logger.error('Failed to fetch OAuth status', error as Error);
     res.status(500).json({
       success: false,
       error: 'Failed to get OAuth status',

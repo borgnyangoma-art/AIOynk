@@ -1,100 +1,92 @@
-import { describe, it, expect } from 'vitest';
-import authSlice, { loginSuccess, logout, setUser } from '../slices/authSlice';
+import { describe, it, expect } from 'vitest'
+import authReducer, {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  logout,
+  updateUser,
+} from '../slices/authSlice'
+
+const baseState = {
+  user: null,
+  tokens: null,
+  isAuthenticated: false,
+  isLoading: false,
+  error: null,
+}
+
+const mockUser = {
+  id: '1',
+  email: 'test@example.com',
+  name: 'Test User',
+}
+
+const mockTokens = {
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+  expiresIn: 3600,
+}
 
 describe('authSlice', () => {
-  it('should return initial state', () => {
-    const initialState = authSlice.reducer(undefined, { type: 'unknown' });
-    expect(initialState).toEqual({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      loading: false,
-      error: null,
-    });
-  });
+  it('returns the initial state', () => {
+    const state = authReducer(undefined, { type: 'unknown' })
+    expect(state).toEqual(baseState)
+  })
 
-  it('should handle loginSuccess', () => {
-    const user = {
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
-    };
-    const accessToken = 'access-token';
-    const refreshToken = 'refresh-token';
+  it('handles loginStart', () => {
+    const state = authReducer(baseState, loginStart())
+    expect(state.isLoading).toBe(true)
+    expect(state.error).toBeNull()
+  })
 
-    const state = authSlice.reducer(
-      undefined,
-      loginSuccess({ user, accessToken, refreshToken })
-    );
+  it('handles loginSuccess', () => {
+    const state = authReducer(
+      baseState,
+      loginSuccess({ user: mockUser, tokens: mockTokens }),
+    )
 
     expect(state).toEqual({
-      user,
-      accessToken,
-      refreshToken,
+      user: mockUser,
+      tokens: mockTokens,
       isAuthenticated: true,
-      loading: false,
+      isLoading: false,
       error: null,
-    });
-  });
+    })
+  })
 
-  it('should handle logout', () => {
-    const stateWithUser = authSlice.reducer(
-      {
-        user: { id: '1', email: 'test@example.com', name: 'Test User' },
-        accessToken: 'token',
-        refreshToken: 'refresh',
-        isAuthenticated: true,
-        loading: false,
-        error: null,
-      },
-      logout()
-    );
+  it('handles loginFailure', () => {
+    const previousState = { ...baseState, isLoading: true }
+    const state = authReducer(previousState, loginFailure('Invalid credentials'))
 
-    expect(stateWithUser).toEqual({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      loading: false,
-      error: null,
-    });
-  });
+    expect(state.isLoading).toBe(false)
+    expect(state.error).toBe('Invalid credentials')
+    expect(state.isAuthenticated).toBe(false)
+    expect(state.user).toBeNull()
+    expect(state.tokens).toBeNull()
+  })
 
-  it('should handle setUser', () => {
-    const initialState = authSlice.reducer(
-      undefined,
-      loginSuccess({
-        user: { id: '1', email: 'old@example.com', name: 'Old' },
-        accessToken: 'token',
-        refreshToken: 'refresh',
-      })
-    );
+  it('handles logout', () => {
+    const authenticatedState = authReducer(
+      baseState,
+      loginSuccess({ user: mockUser, tokens: mockTokens }),
+    )
 
-    const updatedUser = { id: '1', email: 'new@example.com', name: 'New' };
-    const state = authSlice.reducer(initialState, setUser(updatedUser));
+    const state = authReducer(authenticatedState, logout())
+    expect(state).toEqual(baseState)
+  })
 
-    expect(state.user).toEqual(updatedUser);
-    expect(state.accessToken).toBe('token');
-  });
+  it('handles updateUser', () => {
+    const authenticatedState = authReducer(
+      baseState,
+      loginSuccess({ user: mockUser, tokens: mockTokens }),
+    )
 
-  it('should handle multiple actions correctly', () => {
-    let state = authSlice.reducer(undefined, { type: 'unknown' });
+    const state = authReducer(
+      authenticatedState,
+      updateUser({ name: 'Updated User' }),
+    )
 
-    // Login
-    state = authSlice.reducer(
-      state,
-      loginSuccess({
-        user: { id: '1', email: 'test@example.com', name: 'Test' },
-        accessToken: 'token',
-        refreshToken: 'refresh',
-      })
-    );
-    expect(state.isAuthenticated).toBe(true);
-
-    // Logout
-    state = authSlice.reducer(state, logout());
-    expect(state.isAuthenticated).toBe(false);
-    expect(state.user).toBeNull();
-  });
-});
+    expect(state.user?.name).toBe('Updated User')
+    expect(state.tokens).toEqual(mockTokens)
+  })
+})

@@ -14,6 +14,12 @@ const PerformanceDashboard: React.FC<Props> = ({ isVisible = false, onClose }) =
   const [stats, setStats] = useState<any>({});
   const [queueStatus, setQueueStatus] = useState({ pending: 0, running: 0, completed: 0, cancelled: 0 });
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [cachePattern, setCachePattern] = useState('cache:*');
+  const [cacheKeys, setCacheKeys] = useState<string[]>([]);
+  const [applicationCacheEntries, setApplicationCacheEntries] = useState<any[]>([]);
+  const [cacheLoading, setCacheLoading] = useState(false);
+  const [cacheError, setCacheError] = useState<string | null>(null);
+  const [cdnInvalidations, setCdnInvalidations] = useState<any[]>([]);
 
   useEffect(() => {
     if (!isVisible) return;
@@ -32,6 +38,83 @@ const PerformanceDashboard: React.FC<Props> = ({ isVisible = false, onClose }) =
     setAlerts(performanceMonitor.getAlerts());
     setStats(performanceMonitor.checkSLACompliance());
     setQueueStatus(resourcePrioritizer.getQueueStatus());
+    void loadCacheData(cachePattern);
+  };
+
+  const loadCacheData = async (pattern: string = cachePattern) => {
+    if (!isVisible) return;
+    setCacheLoading(true);
+    setCacheError(null);
+    try {
+      const [redisRes, appRes, cdnRes] = await Promise.all([
+        fetch(`/api/cache?pattern=${encodeURIComponent(pattern)}`, { credentials: 'include' }),
+        fetch('/api/cache/application', { credentials: 'include' }),
+        fetch('/api/cache/cdn', { credentials: 'include' }),
+      ]);
+
+      if (!redisRes.ok) {
+        throw new Error('Failed to load cache keys');
+      }
+      if (!appRes.ok) {
+        throw new Error('Failed to load application cache');
+      }
+      if (!cdnRes.ok) {
+        throw new Error('Failed to load CDN invalidations');
+      }
+
+      const redisJson = await redisRes.json();
+      const appJson = await appRes.json();
+      const cdnJson = await cdnRes.json();
+      setCacheKeys(redisJson?.data?.keys ?? []);
+      setApplicationCacheEntries(appJson?.data?.entries ?? []);
+      setCdnInvalidations(cdnJson?.data?.invalidations ?? []);
+    } catch (error) {
+      setCacheError(error instanceof Error ? error.message : 'Failed to load cache data');
+    } finally {
+      setCacheLoading(false);
+    }
+  };
+
+  const invalidateRedisCache = async () => {
+    try {
+      await fetch('/api/cache', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pattern: cachePattern }),
+      });
+      await loadCacheData(cachePattern);
+    } catch (error) {
+      setCacheError(error instanceof Error ? error.message : 'Failed to invalidate cache');
+    }
+  };
+
+  const invalidateApplicationCache = async () => {
+    try {
+      await fetch('/api/cache/application', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pattern: cachePattern }),
+      });
+      await loadCacheData(cachePattern);
+    } catch (error) {
+      setCacheError(error instanceof Error ? error.message : 'Failed to invalidate application cache');
+    }
+  };
+
+  const triggerCdnInvalidation = async () => {
+    try {
+      await fetch('/api/cache/cdn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ pattern: cachePattern }),
+      });
+      await loadCacheData(cachePattern);
+    } catch (error) {
+      setCacheError(error instanceof Error ? error.message : 'Failed to schedule CDN invalidation');
+    }
   };
 
   const clearMetrics = () => {
@@ -234,6 +317,125 @@ const PerformanceDashboard: React.FC<Props> = ({ isVisible = false, onClose }) =
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+
+          {/* Cache Inspector */}
+          <div className="bg-white rounded-lg p-4 border border-gray-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Cache Inspector</h3>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="rounded border border-gray-300 px-2 py-1 text-sm"
+                  value={cachePattern}
+                  onChange={(event) => setCachePattern(event.target.value)}
+                  placeholder="cache:*"
+                />
+                <button
+                  onClick={() => loadCacheData(cachePattern)}
+                  className="px-2 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+                  disabled={cacheLoading}
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {cacheError && (
+              <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {cacheError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="rounded border border-gray-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Redis Keys</span>
+                  <button
+                    onClick={invalidateRedisCache}
+                    className="text-xs text-red-600 hover:underline disabled:text-red-300"
+                    disabled={cacheLoading}
+                  >
+                    Invalidate
+                  </button>
+                </div>
+                {cacheKeys.length === 0 ? (
+                  <p className="text-xs text-gray-500">No keys match pattern.</p>
+                ) : (
+                  <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
+                    {cacheKeys.map((key) => (
+                      <li key={key} className="truncate">
+                        {key}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="rounded border border-gray-200 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-700">Application Cache</span>
+                  <button
+                    onClick={invalidateApplicationCache}
+                    className="text-xs text-red-600 hover:underline disabled:text-red-300"
+                    disabled={cacheLoading}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {applicationCacheEntries.length === 0 ? (
+                  <p className="text-xs text-gray-500">No entries cached.</p>
+                ) : (
+                  <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
+                    {applicationCacheEntries.slice(0, 10).map((entry: any) => (
+                      <li key={entry.key} className="flex items-center justify-between gap-2">
+                        <span className="truncate">{entry.key}</span>
+                        <span className="text-[10px] text-gray-400">
+                          ttl: {Math.max(0, Math.round((entry.expiresAt - Date.now()) / 1000))}s
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between rounded border border-gray-200 p-3">
+              <div>
+                <p className="text-sm font-semibold text-gray-700">CDN Invalidation</p>
+                <p className="text-xs text-gray-500">
+                  Pending: {cdnInvalidations.filter((item: any) => item.status === 'pending').length} • Total:{' '}
+                  {cdnInvalidations.length}
+                </p>
+              </div>
+              <button
+                onClick={triggerCdnInvalidation}
+                className="px-3 py-1 rounded bg-purple-600 text-white text-sm hover:bg-purple-700 disabled:bg-purple-300"
+                disabled={cacheLoading}
+              >
+                Purge Pattern
+              </button>
+            </div>
+
+            {cdnInvalidations.length > 0 && (
+              <ul className="text-xs text-gray-600 space-y-1 max-h-32 overflow-y-auto">
+                {cdnInvalidations.slice(0, 6).map((entry: any) => (
+                  <li
+                    key={entry.id}
+                    className="flex items-center justify-between rounded border border-gray-100 px-2 py-1"
+                  >
+                    <span className="truncate">{entry.pattern}</span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] ${
+                        entry.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {entry.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </div>

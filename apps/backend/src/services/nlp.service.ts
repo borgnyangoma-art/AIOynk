@@ -1,4 +1,10 @@
+import axios from 'axios'
 import { IntentClassification, RoutingResult } from '@aio/shared'
+
+import config from '../utils/config'
+import logger from './logger.service'
+import metricsService from './metrics.service'
+import applicationCache from './applicationCache.service'
 
 const INTENT_KEYWORDS: Record<string, string[]> = {
   graphics: ['draw', 'design', 'logo', 'canvas', 'circle', 'square', 'color'],
@@ -14,10 +20,27 @@ const SERVICE_ROUTES: Record<string, RoutingResult> = {
   ide: { service: 'ide-service', endpoint: '/project' },
   cad: { service: 'cad-service', endpoint: '/model' },
   video: { service: 'video-service', endpoint: '/project' },
+  chat: { service: 'chat-service', endpoint: '/message' },
 }
 
-export class NLPService {
-  async classifyIntent(message: string): Promise<IntentClassification> {
+type RemoteIntentResponse = {
+  success: boolean
+  data: IntentClassification
+}
+
+type ConversationHistoryEntry = { role: string; message: string; intent?: string }
+
+export interface NlpContextPayload {
+  sessionId?: string
+  history?: ConversationHistoryEntry[]
+  activeTool?: string
+  artifacts?: Array<{ id: string; tool?: string; name?: string }>
+  metadata?: Record<string, unknown>
+}
+
+class KeywordClassifier {
+  async classify(message: string): Promise<IntentClassification> {
+    const start = process.hrtime.bigint()
     const lower = message.toLowerCase()
     let bestIntent = 'chat'
     let bestScore = 0
@@ -39,11 +62,23 @@ export class NLPService {
     const entities = this.extractEntities(lower)
     const confidence = this.calculateConfidence(bestIntent, winningKeywords)
 
+    const durationSeconds =
+      Number(process.hrtime.bigint() - start) / 1_000_000_000
+    metricsService.recordNlpProcessing(
+      bestIntent,
+      confidence,
+      durationSeconds,
+      bestIntent !== 'chat',
+    )
+
     return {
       intent: bestIntent,
       confidence,
       entities,
       keywords: winningKeywords,
+      route: SERVICE_ROUTES[bestIntent] ?? SERVICE_ROUTES.chat,
+      fallback: bestIntent === 'chat',
+      metadata: { source: 'local' },
     }
   }
 
@@ -81,14 +116,89 @@ export class NLPService {
     const maxKeywords = INTENT_KEYWORDS[intent]?.length || 1
     return Math.min(1, keywords.length / maxKeywords + 0.5)
   }
+}
 
-  async routeRequest(message: string): Promise<RoutingResult & { parameters?: Record<string, any> }> {
-    const classification = await this.classifyIntent(message)
-    const route = SERVICE_ROUTES[classification.intent] ?? {
-      service: 'chat-service',
-      endpoint: '/message',
+export class NLPService {
+  private readonly fallback = new KeywordClassifier()
+
+  private buildCacheKey(message: string, context: NlpContextPayload) {
+    const normalized = message.trim().toLowerCase().slice(0, 300)
+    const lastIntent = context.history?.slice(-1)?.[0]?.intent ?? 'none'
+    const activeTool = context.activeTool ?? 'none'
+    const session = context.sessionId ?? 'anon'
+    return `nlp:${session}:${activeTool}:${lastIntent}:${normalized}`
+  }
+
+  async classifyIntent(
+    message: string,
+    context: NlpContextPayload = {},
+  ): Promise<IntentClassification> {
+    const cacheKey = this.buildCacheKey(message, context)
+    const cached = applicationCache.get<IntentClassification>(cacheKey)
+    if (cached) {
+      return {
+        ...cached,
+        metadata: { ...(cached.metadata || {}), cacheHit: true },
+      }
     }
 
+    const remoteResult = await this.callRemoteService(message, context)
+    const result = remoteResult ?? (await this.fallback.classify(message))
+
+    const tags = ['nlp']
+    if (context.sessionId) {
+      tags.push(`session:${context.sessionId}`)
+    }
+    applicationCache.set(cacheKey, result, 120, tags)
+
+    return result
+  }
+
+  private async callRemoteService(
+    message: string,
+    context: NlpContextPayload,
+  ): Promise<IntentClassification | null> {
+    if (!config.NLP_SERVICE_URL) {
+      return null
+    }
+
+    try {
+      const response = await axios.post<RemoteIntentResponse>(
+        `${config.NLP_SERVICE_URL}/api/v1/nlp/intent`,
+        {
+          message,
+          sessionId: context.sessionId,
+          history: context.history,
+          activeTool: context.activeTool,
+          artifacts: context.artifacts,
+          metadata: context.metadata,
+        },
+        {
+          timeout: config.NLP_SERVICE_TIMEOUT_MS,
+        },
+      )
+
+      if (response.data?.success && response.data.data) {
+        const payload = response.data.data
+        metricsService.recordNlpProcessing(
+          payload.intent,
+          payload.confidence,
+          (payload.metadata?.processingTimeMs ?? 0) / 1000,
+          payload.intent !== 'chat',
+        )
+        return payload
+      }
+    } catch (error) {
+      logger.warn('Remote NLP service unavailable, falling back', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+    return null
+  }
+
+  async routeRequest(message: string, context: NlpContextPayload = {}) {
+    const classification = await this.classifyIntent(message, context)
+    const route = classification.route ?? SERVICE_ROUTES[classification.intent] ?? SERVICE_ROUTES.chat
     return {
       ...route,
       parameters: classification.entities,

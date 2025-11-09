@@ -53,7 +53,7 @@ describe('ServiceRegistry', () => {
       serviceRegistry.registerService(serviceInfo);
 
       const service = serviceRegistry.getService('test-service');
-      expect(service?.metadata.version).toBe('1.0.0');
+      expect(service?.metadata?.version).toBe('1.0.0');
     });
   });
 
